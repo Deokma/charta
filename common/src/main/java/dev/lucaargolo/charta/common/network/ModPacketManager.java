@@ -25,6 +25,7 @@ public abstract class ModPacketManager {
         register(PacketInfo.PLAY_TO_SERVER, CardContainerSlotClickPayload.class);
         register(PacketInfo.PLAY_TO_SERVER, CardTableSelectGamePayload.class);
         register(PacketInfo.PLAY_TO_SERVER, RestoreSolitairePayload.class);
+        register(PacketInfo.PLAY_TO_SERVER, TexasHoldemActionPayload.class);
 
         register(PacketInfo.PLAY_TO_BOTH, LastFunPayload.class);
         register(PacketInfo.PLAY_TO_BOTH, PlayerOptionsPayload.class);

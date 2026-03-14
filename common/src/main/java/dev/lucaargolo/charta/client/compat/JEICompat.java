@@ -4,6 +4,7 @@ import dev.lucaargolo.charta.common.ChartaMod;
 import dev.lucaargolo.charta.common.game.impl.crazyeights.CrazyEightsScreen;
 import dev.lucaargolo.charta.common.game.impl.fun.FunScreen;
 import dev.lucaargolo.charta.common.game.impl.solitaire.SolitaireScreen;
+import dev.lucaargolo.charta.common.game.impl.texasholdem.TexasHoldemScreen;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.gui.handlers.IGuiProperties;
@@ -22,6 +23,7 @@ public class JEICompat implements IModPlugin {
         registration.addGuiScreenHandler(CrazyEightsScreen.class, new NoHandler<>());
         registration.addGuiScreenHandler(FunScreen.class, new NoHandler<>());
         registration.addGuiScreenHandler(SolitaireScreen.class, new NoHandler<>());
+        registration.addGuiScreenHandler(TexasHoldemScreen.class, new NoHandler<>());
     }
 
     @Override

@@ -13,6 +13,7 @@
   "charta.crazy_eights": "Crazy Eights",
   "charta.fun": "Fun",
   "charta.solitaire": "Solitaire",
+  "charta.texas_holdem": "Texas Hold'em",
 
   "entity.minecraft.villager.charta.dealer": "Dealer",
   "entity.minecraft.villager.dealer": "Dealer",
@@ -450,6 +451,34 @@
 
   "charta_md:charta.how_to_play_fun": "charta:en_us/how_to_play_fun",
   "charta_md:charta.how_to_play_crazy_eights": "charta:en_us/how_to_play_crazy_eights",
-  "charta_md:charta.how_to_play_solitaire": "charta:en_us/how_to_play_solitaire"
+  "charta_md:charta.how_to_play_solitaire": "charta:en_us/how_to_play_solitaire",
+  "charta_md:charta.how_to_play_texas_holdem": "charta:en_us/how_to_play_texas_holdem",
+
+  "button.charta.texas_holdem.fold": "Fold",
+  "button.charta.texas_holdem.call": "Call",
+  "button.charta.texas_holdem.check": "Check",
+  "button.charta.texas_holdem.raise": "Raise",
+  "button.charta.texas_holdem.allin": "All-In",
+
+  "rule.charta.texas_holdem.starting_chips": "Starting Chips",
+  "rule.charta.texas_holdem.starting_chips.description": "How many chips each player starts with.",
+  "rule.charta.texas_holdem.big_blind": "Big Blind",
+  "rule.charta.texas_holdem.big_blind.description": "The big blind bet amount.",
+
+  "message.charta.texas_holdem.pot": "Pot: %s",
+  "message.charta.texas_holdem.preflop": "Pre-Flop",
+  "message.charta.texas_holdem.flop": "Flop",
+  "message.charta.texas_holdem.turn": "Turn",
+  "message.charta.texas_holdem.river": "River",
+  "message.charta.texas_holdem.showdown": "Showdown!",
+  "message.charta.texas_holdem.folded": "Folded",
+  "message.charta.texas_holdem.checked": "Checked",
+  "message.charta.texas_holdem.called": "Called %s",
+  "message.charta.texas_holdem.raised": "Raised to %s",
+  "message.charta.texas_holdem.all_in": "All-In! (%s)",
+  "message.charta.texas_holdem.wins_pot": "Wins the pot of %s chips!",
+  "message.charta.texas_holdem.hand_name": "with %s",
+  "message.charta.texas_holdem.chips_remaining": "Chips: %s",
+  "message.charta.texas_holdem.posted_blind": "Posted blind: %s"
 
 }

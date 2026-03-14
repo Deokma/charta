@@ -8,6 +8,8 @@ import dev.lucaargolo.charta.common.game.impl.fun.FunGame;
 import dev.lucaargolo.charta.common.game.impl.fun.FunMenu;
 import dev.lucaargolo.charta.common.game.impl.solitaire.SolitaireGame;
 import dev.lucaargolo.charta.common.game.impl.solitaire.SolitaireMenu;
+import dev.lucaargolo.charta.common.game.impl.texasholdem.TexasHoldemGame;
+import dev.lucaargolo.charta.common.game.impl.texasholdem.TexasHoldemMenu;
 import dev.lucaargolo.charta.common.registry.ModRegistry;
 import dev.lucaargolo.charta.common.registry.minecraft.MinecraftEntry;
 import net.minecraft.core.Registry;
@@ -21,6 +23,7 @@ public class Games {
     public static final MinecraftEntry<GameType<CrazyEightsGame, CrazyEightsMenu>> CRAZY_EIGHTS = MOD_REGISTRY.register("crazy_eights", () -> CrazyEightsGame::new);
     public static final MinecraftEntry<GameType<FunGame, FunMenu>> FUN = MOD_REGISTRY.register("fun", () -> FunGame::new);
     public static final MinecraftEntry<GameType<SolitaireGame, SolitaireMenu>> SOLITAIRE = MOD_REGISTRY.register("solitaire", () -> SolitaireGame::new);
+    public static final MinecraftEntry<GameType<TexasHoldemGame, TexasHoldemMenu>> TEXAS_HOLDEM = MOD_REGISTRY.register("texas_holdem", () -> TexasHoldemGame::new);
 
     public static Registry<GameType<?, ?>> getRegistry() {
         return MOD_REGISTRY.getRegistry();

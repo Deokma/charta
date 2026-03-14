@@ -180,7 +180,10 @@ public abstract class Game<G extends Game<G, M>, M extends AbstractCardMenu<G, M
     }
 
     public void setCurrentPlayer(int index) {
-        this.currentPlayer = getPlayers().get(index);
+        if (index >= 0 && index < getPlayers().size()) {
+            this.currentPlayer = getPlayers().get(index);
+        }
+        // index == -1 means currentPlayer is null (game not started yet) — ignore safely
     }
 
     protected Stream<Card> getFullHand(CardPlayer player) {
