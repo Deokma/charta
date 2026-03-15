@@ -71,11 +71,6 @@ public abstract class AbstractCardMenu<G extends Game<G, M>, M extends AbstractC
         }
     };
 
-    @org.jetbrains.annotations.Nullable
-    public net.minecraft.core.BlockPos getBlockPos() {
-        return access.evaluate((level, pos) -> pos, null);
-    }
-
     public AbstractCardMenu(MenuType<?> menuType, int containerId, Inventory inventory, Definition definition) {
         super(menuType, containerId);
         this.inventory = inventory;
@@ -116,6 +111,12 @@ public abstract class AbstractCardMenu<G extends Game<G, M>, M extends AbstractC
 
     public Deck getDeck() {
         return deck;
+    }
+
+    /** Returns the BlockPos of the card table this menu belongs to, or null if not available. */
+    @org.jetbrains.annotations.Nullable
+    public net.minecraft.core.BlockPos getBlockPos() {
+        return access.evaluate((level, pos) -> pos, null);
     }
 
     public abstract GameType<G, M> getGameType();

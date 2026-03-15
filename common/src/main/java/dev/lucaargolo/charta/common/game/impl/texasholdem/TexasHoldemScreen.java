@@ -9,6 +9,7 @@ import dev.lucaargolo.charta.common.menu.CardSlot;
 import dev.lucaargolo.charta.common.network.TexasHoldemActionPayload;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -21,20 +22,17 @@ import java.util.List;
 
 public class TexasHoldemScreen extends GameScreen<TexasHoldemGame, TexasHoldemMenu> {
 
-    // Gameplay background
     private static final ResourceLocation TEXTURE = ChartaMod.id("textures/gui/texas_holdem_bg.png");
 
-    // Button layout – 4 buttons in one row
     private static final int BTN_W = 48;
     private static final int BTN_H = 20;
     private static final int BTN_GAP = 5;
 
-    // Per-action semantic colours (RGB24, no alpha)
-    private static final int COLOR_FOLD     = 0xAA2222; // red    – negative action
-    private static final int COLOR_CHECK    = 0x228844; // green  – neutral/safe
-    private static final int COLOR_RAISE    = 0xBB7700; // amber  – aggressive bet
-    private static final int COLOR_ALLIN    = 0x7722AA; // purple – maximum risk
-    private static final int COLOR_INACTIVE = 0x444444; // grey   – disabled
+    private static final int COLOR_FOLD     = 0xAA2222;
+    private static final int COLOR_CHECK    = 0x228844;
+    private static final int COLOR_RAISE    = 0xBB7700;
+    private static final int COLOR_ALLIN    = 0x7722AA;
+    private static final int COLOR_INACTIVE = 0x444444;
 
     public TexasHoldemScreen(TexasHoldemMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -43,10 +41,32 @@ public class TexasHoldemScreen extends GameScreen<TexasHoldemGame, TexasHoldemMe
     }
 
     // =========================================================================
-    // Colour helpers for 3-D border effect
+    // Sync chip data to ChartaModClient so CardTableBlockEntityRenderer
+    // can draw 3-D chip stacks on the table block every frame.
+    // Data intentionally outlives the screen so the table stays correct after closing.
     // =========================================================================
+    @Override
+    public void render(@NotNull GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        BlockPos tablePos = menu.getBlockPos();
+        if (tablePos != null) {
+            List<CardPlayer> players = menu.getGame().getPlayers();
+            int n = players.size();
+            int[] chips = new int[n];
+            int foldedMask = 0, allInMask = 0;
+            for (int i = 0; i < n; i++) {
+                chips[i] = menu.getChips(i);
+                if (menu.isFolded(i)) foldedMask |= (1 << i);
+                if (menu.isAllIn(i))  allInMask  |= (1 << i);
+            }
+            ChartaModClient.TABLE_POKER_CHIPS.put(tablePos, chips);
+            ChartaModClient.TABLE_POKER_GAME_SLOT_COUNT.put(tablePos, menu.getGame().getSlots().size());
+            ChartaModClient.TABLE_POKER_FOLDED.put(tablePos, foldedMask);
+            ChartaModClient.TABLE_POKER_ALLIN.put(tablePos, allInMask);
+            ChartaModClient.TABLE_POKER_STARTING_CHIPS.put(tablePos, menu.getStartingChips());
+        }
+        super.render(g, mouseX, mouseY, partialTick);
+    }
 
-    /** Brighten an RGB24 value by ~60 per channel. */
     private static int lighten(int rgb) {
         int r = Math.min(255, ((rgb >> 16) & 0xFF) + 70);
         int g = Math.min(255, ((rgb >>  8) & 0xFF) + 70);
@@ -54,7 +74,6 @@ public class TexasHoldemScreen extends GameScreen<TexasHoldemGame, TexasHoldemMe
         return (r << 16) | (g << 8) | b;
     }
 
-    /** Darken an RGB24 value by ~50 per channel. */
     private static int darken(int rgb) {
         int r = Math.max(0, ((rgb >> 16) & 0xFF) - 55);
         int g = Math.max(0, ((rgb >>  8) & 0xFF) - 55);
@@ -62,9 +81,6 @@ public class TexasHoldemScreen extends GameScreen<TexasHoldemGame, TexasHoldemMe
         return (r << 16) | (g << 8) | b;
     }
 
-    // =========================================================================
-    // renderBg – absolute screen coords.
-    // =========================================================================
     @Override
     protected void renderBg(@NotNull GuiGraphics g, float partialTick, int mouseX, int mouseY) {
         int bgTop    = 40;
@@ -72,7 +88,6 @@ public class TexasHoldemScreen extends GameScreen<TexasHoldemGame, TexasHoldemMe
 
         g.blit(TEXTURE, 0, bgTop, 0, 0, width, bgBottom - bgTop, width, bgBottom - bgTop);
 
-        // ── Action buttons ──
         boolean myTurn = menu.isCurrentPlayer() && menu.isGameReady()
                 && menu.getPhase() != TexasHoldemGame.Phase.SHOWDOWN;
         int myIdx = menu.getGame().getPlayers().indexOf(menu.getCardPlayer());
@@ -88,12 +103,10 @@ public class TexasHoldemScreen extends GameScreen<TexasHoldemGame, TexasHoldemMe
             int bx = (width - totalBtnsW) / 2;
             int by = bgBottom - BTN_H - 6;
 
-            // Fold – red
             drawBtn(g, mouseX, mouseY, bx, by,
                     Component.translatable("button.charta.texas_holdem.fold"),
                     true, COLOR_FOLD);
 
-            // Check / Call – green
             Component checkCallLabel = canCheck
                     ? Component.translatable("button.charta.texas_holdem.check")
                     : Component.translatable("button.charta.texas_holdem.call")
@@ -101,67 +114,39 @@ public class TexasHoldemScreen extends GameScreen<TexasHoldemGame, TexasHoldemMe
             drawBtn(g, mouseX, mouseY, bx + BTN_W + BTN_GAP, by,
                     checkCallLabel, true, COLOR_CHECK);
 
-            // Raise – amber
             drawBtn(g, mouseX, mouseY, bx + (BTN_W + BTN_GAP) * 2, by,
                     Component.translatable("button.charta.texas_holdem.raise")
                             .copy().append(" +" + menu.getRaiseAmount()),
                     myChips > 0, myChips > 0 ? COLOR_RAISE : COLOR_INACTIVE);
 
-            // All-In – purple
             drawBtn(g, mouseX, mouseY, bx + (BTN_W + BTN_GAP) * 3, by,
                     Component.translatable("button.charta.texas_holdem.allin"),
                     myChips > 0, myChips > 0 ? COLOR_ALLIN : COLOR_INACTIVE);
         }
     }
 
-    /**
-     * Draws a single styled action button at absolute screen coordinates.
-     *
-     * Visual layers (back-to-front):
-     *   1. Dark shadow strip on bottom + right edges  → depth
-     *   2. Light highlight strip on top + left edges  → raised look
-     *   3. Main fill in the button's semantic colour
-     *   4. Inner top-row tint (lighter stripe) → subtle gloss
-     *   5. Text, centred & white with drop shadow
-     *   6. Semi-transparent hover overlay (only when active)
-     */
     private void drawBtn(GuiGraphics g, int mx, int my,
                          int ax, int ay, Component label,
                          boolean active, int baseColor) {
-
-        int color    = active ? baseColor : COLOR_INACTIVE;
+        int color      = active ? baseColor : COLOR_INACTIVE;
         int colorAlpha = 0xFF000000 | color;
-        int light    = 0xFF000000 | lighten(color);
-        int dark     = 0xFF000000 | darken(color);
+        int light      = 0xFF000000 | lighten(color);
+        int dark       = 0xFF000000 | darken(color);
 
-        // 1 · Outer shadow (bottom-right, 1 px)
-        g.fill(ax + 2, ay + BTN_H - 1, ax + BTN_W - 1, ay + BTN_H,   dark);  // bottom
-        g.fill(ax + BTN_W - 1, ay + 2, ax + BTN_W,     ay + BTN_H,   dark);  // right
-
-        // 2 · Outer highlight (top-left, 1 px)
-        g.fill(ax,     ay,     ax + BTN_W - 1, ay + 1,         light);  // top
-        g.fill(ax,     ay + 1, ax + 1,         ay + BTN_H - 1, light);  // left
-
-        // 3 · Main fill
+        g.fill(ax + 2, ay + BTN_H - 1, ax + BTN_W - 1, ay + BTN_H,   dark);
+        g.fill(ax + BTN_W - 1, ay + 2, ax + BTN_W,     ay + BTN_H,   dark);
+        g.fill(ax,     ay,     ax + BTN_W - 1, ay + 1,         light);
+        g.fill(ax,     ay + 1, ax + 1,         ay + BTN_H - 1, light);
         g.fill(ax + 1, ay + 1, ax + BTN_W - 1, ay + BTN_H - 1, colorAlpha);
+        g.fill(ax + 1, ay + 1, ax + BTN_W - 1, ay + 1 + BTN_H / 3, 0x22FFFFFF);
 
-        // 4 · Subtle gloss: top 1/3 of the button is slightly lighter
-        int glossH = BTN_H / 3;
-        g.fill(ax + 1, ay + 1, ax + BTN_W - 1, ay + 1 + glossH, 0x22FFFFFF);
-
-        // 5 · Label – centred, white with shadow
         int tx = ax + BTN_W / 2 - font.width(label) / 2;
         int ty = ay + (BTN_H - 8) / 2;
-        // Drop shadow (1 px offset)
         g.drawString(font, label, tx + 1, ty + 1, 0x44000000, false);
-        // Main text
         g.drawString(font, label, tx, ty, 0xFFFFFFFF, false);
 
-        // 6 · Hover overlay
-        boolean hovered = mx >= ax && mx < ax + BTN_W && my >= ay && my < ay + BTN_H;
-        if (hovered && active) {
+        if (mx >= ax && mx < ax + BTN_W && my >= ay && my < ay + BTN_H && active) {
             g.fill(ax + 1, ay + 1, ax + BTN_W - 1, ay + BTN_H - 1, 0x33FFFFFF);
-            // Extra bright edge at top when hovered
             g.fill(ax + 1, ay + 1, ax + BTN_W - 1, ay + 2, 0x44FFFFFF);
         }
     }
@@ -223,9 +208,6 @@ public class TexasHoldemScreen extends GameScreen<TexasHoldemGame, TexasHoldemMe
         }
     }
 
-    // =========================================================================
-    // Mouse click — must mirror the renderBg button positions exactly
-    // =========================================================================
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         boolean myTurn = menu.isCurrentPlayer() && menu.isGameReady()
@@ -265,9 +247,6 @@ public class TexasHoldemScreen extends GameScreen<TexasHoldemGame, TexasHoldemMe
         ChartaMod.getPacketManager().sendToServer(new TexasHoldemActionPayload(action));
     }
 
-    // =========================================================================
-    // Top bar
-    // =========================================================================
     @Override
     public void renderTopBar(@NotNull GuiGraphics g) {
         super.renderTopBar(g);
@@ -309,50 +288,6 @@ public class TexasHoldemScreen extends GameScreen<TexasHoldemGame, TexasHoldemMe
             g.pose().scale(0.5f, 0.5f, 0.5f);
             g.drawString(font, chipStr, 0, 0, textColor, true);
             g.pose().popPose();
-        }
-    }
-
-    @Override
-    public void render(@NotNull GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        net.minecraft.core.BlockPos tablePos = menu.getBlockPos();
-        if (tablePos != null) {
-            List<dev.lucaargolo.charta.common.game.api.CardPlayer> players = menu.getGame().getPlayers();
-            int n = players.size();
-            int[] chips = new int[n];
-
-            for (int i = 0; i < n; i++) {
-                chips[i] = menu.getChips(i);
-            }
-
-            dev.lucaargolo.charta.client.ChartaModClient.TABLE_POKER_CHIPS.put(tablePos, chips);
-
-            int gameSlotCount = menu.getGame().getSlots().size();
-            dev.lucaargolo.charta.client.ChartaModClient.TABLE_POKER_GAME_SLOT_COUNT.put(tablePos, gameSlotCount);
-
-            int foldedMask = 0;
-            int allInMask = 0;
-            for (int i = 0; i < n; i++) {
-                if (menu.isFolded(i)) foldedMask |= (1 << i);
-                if (menu.isAllIn(i)) allInMask |= (1 << i);
-            }
-
-            dev.lucaargolo.charta.client.ChartaModClient.TABLE_POKER_FOLDED.put(tablePos, foldedMask);
-            dev.lucaargolo.charta.client.ChartaModClient.TABLE_POKER_ALLIN.put(tablePos, allInMask);
-        }
-
-        super.render(g, mouseX, mouseY, partialTick);
-    }
-
-    @Override
-    public void removed() {
-        super.removed();
-
-        net.minecraft.core.BlockPos tablePos = menu.getBlockPos();
-        if (tablePos != null) {
-            dev.lucaargolo.charta.client.ChartaModClient.TABLE_POKER_CHIPS.remove(tablePos);
-            dev.lucaargolo.charta.client.ChartaModClient.TABLE_POKER_GAME_SLOT_COUNT.remove(tablePos);
-            dev.lucaargolo.charta.client.ChartaModClient.TABLE_POKER_FOLDED.remove(tablePos);
-            dev.lucaargolo.charta.client.ChartaModClient.TABLE_POKER_ALLIN.remove(tablePos);
         }
     }
 

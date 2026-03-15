@@ -212,6 +212,11 @@ public class TexasHoldemMenu extends AbstractCardMenu<TexasHoldemGame, TexasHold
 
     // -------------------------------------------------------------------------
 
+    /** Returns the starting chip count for this game (from game options). */
+    public int getStartingChips() {
+        return game.getStartingChipsPublic();
+    }
+
     @Override
     public GameType<TexasHoldemGame, TexasHoldemMenu> getGameType() {
         return Games.TEXAS_HOLDEM.get();

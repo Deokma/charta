@@ -28,11 +28,12 @@ public class CardTableBlockEntityRenderer implements BlockEntityRenderer<CardTab
 
     // Chip colours by wealth tier (alternating body/shadow)
     private static final int[][] CHIP_COLORS = {
-            { 0xFFAAAAAA, 0xFF888888 }, // white  – < 100
-            { 0xFFCC2222, 0xFFAA1111 }, // red    – 100-499
-            { 0xFF228822, 0xFF117711 }, // green  – 500-999
-            { 0xFF222222, 0xFF111111 }, // black  – 1000-1999
-            { 0xFF7722CC, 0xFF6611BB }, // purple – 2000+
+            { 0xFFAAAAAA, 0xFF888888 }, // 0 white
+            { 0xFFCC2222, 0xFFAA1111 }, // 1 red
+            { 0xFF228822, 0xFF117711 }, // 2 green
+            { 0xFF222222, 0xFF111111 }, // 3 black
+            { 0xFF7722CC, 0xFF6611BB }, // 4 purple
+            { 0xFF2255CC, 0xFF1144AA }, // 5 blue
     };
     private static final int[] CHIP_ALLIN  = { 0xFFFFCC00, 0xFFFFAA00 };
     private static final int[] CHIP_FOLDED = { 0xFF555555, 0xFF444444 };
@@ -142,34 +143,62 @@ public class CardTableBlockEntityRenderer implements BlockEntityRenderer<CardTab
             int[] chips = ChartaModClient.TABLE_POKER_CHIPS.get(tablePos);
             Integer gameSlotCountObj = ChartaModClient.TABLE_POKER_GAME_SLOT_COUNT.get(tablePos);
             if (chips != null && gameSlotCountObj != null) {
-                int gameSlotCount = gameSlotCountObj;
-                int foldedMask = ChartaModClient.TABLE_POKER_FOLDED.getOrDefault(tablePos, 0);
-                int allInMask  = ChartaModClient.TABLE_POKER_ALLIN.getOrDefault(tablePos, 0);
-                // Hand slots follow game slots. Each hand slot index corresponds to player[i].
+                int gameSlotCount    = gameSlotCountObj;
+                int foldedMask       = ChartaModClient.TABLE_POKER_FOLDED.getOrDefault(tablePos, 0);
+                int allInMask        = ChartaModClient.TABLE_POKER_ALLIN.getOrDefault(tablePos, 0);
+                int startingChips    = ChartaModClient.TABLE_POKER_STARTING_CHIPS.getOrDefault(tablePos, 1000);
+                if (startingChips <= 0) startingChips = 1000;
+
+                // 3 stacks in a triangle cluster.
+                // Offsets are in (side, inward) basis — forms a tight triangle.
+                //   stack 0 (red)  – back-left
+                //   stack 1 (blue) – back-right
+                //   stack 2 (green)– front-centre
+                final int[]   STACK_COLORS  = { 1, 5, 2 };          // red, blue, green
+                // (sideOffset, inwardOffset) for each stack in table units
+                final float[] SIDE_OFF   = { -11f,  11f,   0f };
+                final float[] INWARD_OFF = {   8f,   8f, -10f };
+                final int     MAX_DISCS  = 12;
+                final float   INWARD_DIST = 130f; // anchor distance from hand slot
+
                 for (int pi = 0; pi < chips.length; pi++) {
                     int handSlotIndex = gameSlotCount + pi;
                     if (handSlotIndex >= gameSlots) break;
 
+                    int   totalChips = chips[pi];
+                    boolean isFolded = (foldedMask & (1 << pi)) != 0;
+                    boolean isAllIn  = (allInMask  & (1 << pi)) != 0;
+
+                    if (totalChips <= 0) continue;
+
+                    // Height as % of starting chips, mapped to [1..MAX_DISCS]
+                    float pct     = (float) totalChips / startingChips;
+                    int baseDiscs = Math.max(1, Math.round(pct * MAX_DISCS));
+
                     GameSlot handSlot = blockEntity.getSlot(handSlotIndex);
-                    float hx = handSlot.lerpX(partialTick);
-                    float hy = handSlot.lerpY(partialTick);
+                    float hx    = handSlot.lerpX(partialTick);
+                    float hy    = handSlot.lerpY(partialTick);
                     float angle = handSlot.lerpAngle(partialTick);
+                    float rad   = (float) Math.toRadians(angle);
 
-                    // Place chip stack beside the hand: offset perpendicular to angle
-                    // (to the right of the cards from the player's perspective)
-                    float angleRad = (float) Math.toRadians(angle);
-                    float perpX =  (float) Math.cos(angleRad);
-                    float perpY = -(float) Math.sin(angleRad);
+                    float inX   = -(float) Math.sin(rad);
+                    float inY   =  (float) Math.cos(rad);
+                    float sideX =  (float) Math.cos(rad);
+                    float sideY =  (float) Math.sin(rad);
 
-                    // Offset: ~20 units to the side of the hand, in table units (1/160 block)
-                    float chipX = hx + perpX * 28f;
-                    float chipY = hy + perpY * 28f;
+                    float anchorX = hx + inX * INWARD_DIST;
+                    float anchorY = hy + inY * INWARD_DIST;
 
-                    drawChipStack3D(poseStack, bufferSource, packedLight,
-                            chipX, chipY, chips[pi],
-                            (foldedMask & (1 << pi)) != 0,
-                            (allInMask  & (1 << pi)) != 0,
-                            angle);
+                    // Slightly varied heights: 100 %, 85 %, 70 % — looks natural
+                    float[] fractions = { 1.0f, 0.85f, 0.70f };
+
+                    for (int s = 0; s < STACK_COLORS.length; s++) {
+                        int discs = Math.max(1, Math.round(baseDiscs * fractions[s]));
+                        float cx  = anchorX + sideX * SIDE_OFF[s] + inX * INWARD_OFF[s];
+                        float cy  = anchorY + sideY * SIDE_OFF[s] + inY * INWARD_OFF[s];
+                        drawChipStack3D(poseStack, bufferSource, packedLight,
+                                cx, cy, discs, isFolded, isAllIn, STACK_COLORS[s]);
+                    }
                 }
             }
         }else if(!deckStack.isEmpty()) {
@@ -180,82 +209,56 @@ public class CardTableBlockEntityRenderer implements BlockEntityRenderer<CardTab
     }
 
     /**
-     * Draws a stack of chip discs in 3D world space (table surface).
-     * Coordinates are in "table units" (same space as GameSlot x/y, scale 1/160 of a block).
-     * Discs are quads lying flat on the table; the stack grows along the +Z axis (up from table).
+     * Draws one denomination stack of chip discs on the 3-D table surface.
      *
-     * @param px      table-space X centre of stack
-     * @param py      table-space Y centre of stack
-     * @param chips   chip count
-     * @param angle   rotation angle of the hand slot (degrees) — not used for quads, kept for future use
+     * @param px         table-space X centre
+     * @param py         table-space Y centre
+     * @param numDiscs   number of discs to draw (already clamped by caller)
+     * @param folded     grey-out all discs
+     * @param allIn      gold override for all discs
+     * @param colorIndex index into CHIP_COLORS (0=white,1=red,2=green,3=black,4=purple)
      */
     private void drawChipStack3D(PoseStack poseStack, MultiBufferSource bufferSource, int packedLight,
-                                 float px, float py, int chips,
-                                 boolean folded, boolean allIn, float angle) {
-        if (chips <= 0) return;
+                                 float px, float py, int numDiscs,
+                                 boolean folded, boolean allIn, int colorIndex) {
+        if (numDiscs <= 0) return;
 
-        // Number of discs: 1 per 100 chips, capped at 10
-        int numDiscs = Mth.clamp(chips / 100, 1, 10);
+        int[] colorPair = folded ? CHIP_FOLDED
+                : allIn  ? CHIP_ALLIN
+                : CHIP_COLORS[Mth.clamp(colorIndex, 0, CHIP_COLORS.length - 1)];
 
-        // Pick colour tier
-        int[] colorPair;
-        if (folded) {
-            colorPair = CHIP_FOLDED;
-        } else if (allIn) {
-            colorPair = CHIP_ALLIN;
-        } else if (chips >= 2000) {
-            colorPair = CHIP_COLORS[4];
-        } else if (chips >= 1000) {
-            colorPair = CHIP_COLORS[3];
-        } else if (chips >= 500) {
-            colorPair = CHIP_COLORS[2];
-        } else if (chips >= 100) {
-            colorPair = CHIP_COLORS[1];
-        } else {
-            colorPair = CHIP_COLORS[0];
-        }
+        final float DISC_R   = 8f;   // radius — was 5, now bigger
+        final float DISC_H   = 2.5f; // height per disc layer
+        final float DISC_GAP = 0.4f; // tiny gap so layers are visible
+        final float STEP     = DISC_H + DISC_GAP;
 
-        // Disc dimensions in table units (table is 160×160 units = 1 block)
-        final float DISC_R  = 5f;   // radius
-        final float DISC_H  = 1.5f; // height of each disc layer
-        final float DISC_GAP = 0.5f; // gap between layers
-        final float STEP = DISC_H + DISC_GAP;
-
-        // We render in the coordinate space that's already active in render():
-        // scale(1/160), translate(x,y,z), scale(160) around each card.
-        // For chips we push a separate pose at 1/160 scale.
         poseStack.pushPose();
         poseStack.scale(1f / 160f, 1f / 160f, 1f / 160f);
 
         VertexConsumer consumer = bufferSource.getBuffer(
                 ChartaModClient.getRenderTypeManager().chipStack());
 
+        float x0 = px - DISC_R, x1 = px + DISC_R;
+        float y0 = py - DISC_R, y1 = py + DISC_R;
+
         for (int d = 0; d < numDiscs; d++) {
-            float zBase = d * STEP;
+            float zb = d * STEP;
+            float zt = zb + DISC_H;
+
             int bodyColor = (d % 2 == 0) ? colorPair[0] : colorPair[1];
-            float r = ((bodyColor >> 16) & 0xFF) / 255f;
-            float gr = ((bodyColor >> 8)  & 0xFF) / 255f;
+            float r  = ((bodyColor >> 16) & 0xFF) / 255f;
+            float gr = ((bodyColor >>  8) & 0xFF) / 255f;
             float b  = ( bodyColor        & 0xFF) / 255f;
 
-            float zt = zBase + DISC_H;
             PoseStack.Pose e = poseStack.last();
 
-            float x0 = px - DISC_R, x1 = px + DISC_R;
-            float y0 = py - DISC_R, y1 = py + DISC_R;
-
-            float zb = zBase;
-            // Side faces (darker)
-            drawQuad(e, consumer, x0, y0, zb, x1, y0, zb, x1, y0, zt, x0, y0, zt,
-                    r * 0.7f, gr * 0.7f, b * 0.7f, 1f, packedLight);
-            drawQuad(e, consumer, x1, y0, zb, x1, y1, zb, x1, y1, zt, x1, y0, zt,
-                    r * 0.7f, gr * 0.7f, b * 0.7f, 1f, packedLight);
-            drawQuad(e, consumer, x1, y1, zb, x0, y1, zb, x0, y1, zt, x1, y1, zt,
-                    r * 0.7f, gr * 0.7f, b * 0.7f, 1f, packedLight);
-            drawQuad(e, consumer, x0, y1, zb, x0, y0, zb, x0, y0, zt, x0, y1, zt,
-                    r * 0.7f, gr * 0.7f, b * 0.7f, 1f, packedLight);
-            // Top face (full colour)
-            drawQuad(e, consumer, x0, y0, zt, x1, y0, zt, x1, y1, zt, x0, y1, zt,
-                    r, gr, b, 1f, packedLight);
+            // Side faces (70% brightness for depth)
+            drawQuad(e, consumer, x0, y0, zb, x1, y0, zb, x1, y0, zt, x0, y0, zt, r*.7f, gr*.7f, b*.7f, 1f, packedLight);
+            drawQuad(e, consumer, x1, y0, zb, x1, y1, zb, x1, y1, zt, x1, y0, zt, r*.7f, gr*.7f, b*.7f, 1f, packedLight);
+            drawQuad(e, consumer, x1, y1, zb, x0, y1, zb, x0, y1, zt, x1, y1, zt, r*.7f, gr*.7f, b*.7f, 1f, packedLight);
+            drawQuad(e, consumer, x0, y1, zb, x0, y0, zb, x0, y0, zt, x0, y1, zt, r*.7f, gr*.7f, b*.7f, 1f, packedLight);
+            // Top face
+            drawQuad(e, consumer, x0, y0, zt, x1, y0, zt, x1, y1, zt, x0, y1, zt, r, gr, b, 1f, packedLight);
         }
 
         poseStack.popPose();

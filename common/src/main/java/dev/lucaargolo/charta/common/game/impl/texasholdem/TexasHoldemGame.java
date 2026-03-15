@@ -92,6 +92,11 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
         return STARTING_CHIPS_OPT.get() * 100;
     }
 
+    /** Public alias used by TexasHoldemMenu to expose starting chips to the client. */
+    public int getStartingChipsPublic() {
+        return getStartingChips();
+    }
+
     /** Returns big blind chip amount. */
     private int getBigBlind() {
         return BIG_BLIND_OPT.get();
@@ -708,10 +713,10 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
                     handComp));
 
             // Direct message shown under the winner's avatar in game history panel
-//            play(players.get(winnerIdx),
-//                    Component.translatable("message.charta.texas_holdem.showdown_result_short",
-//                            Component.literal("+" + share + "♦").withStyle(ChatFormatting.GOLD),
-//                            handComp));
+            play(players.get(winnerIdx),
+                    Component.translatable("message.charta.texas_holdem.showdown_result_short",
+                            Component.literal("+" + share + "♦").withStyle(ChatFormatting.GOLD),
+                            handComp));
         }
 
         // Show each non-winning contender's hand in history

@@ -29,7 +29,6 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.NoopRenderer;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
@@ -55,15 +54,16 @@ public abstract class ChartaModClient {
     public static final LinkedList<Triple<Component, Integer, Component>> LOCAL_HISTORY = new LinkedList<>();
     public static final HashMap<ResourceLocation, byte[]> LOCAL_OPTIONS = new HashMap<>();
 
-    /** Фишки игроков по позиции стола. Заполняется в TexasHoldemScreen, читается в рендере стола. */
-    public static final Map<BlockPos, int[]> TABLE_POKER_CHIPS = new HashMap<>();
-    /** Количество "игровых" слотов стола, чтобы понимать, где начинаются hand slots игроков. */
-    public static final Map<BlockPos, Integer> TABLE_POKER_GAME_SLOT_COUNT = new HashMap<>();
-    /** Битовая маска folded-игроков по позиции стола. */
-    public static final Map<BlockPos, Integer> TABLE_POKER_FOLDED = new HashMap<>();
-
-    /** Битовая маска all-in игроков по позиции стола. */
-    public static final Map<BlockPos, Integer> TABLE_POKER_ALLIN = new HashMap<>();
+    /** Per-table Texas Hold'em chip data. Populated by TexasHoldemScreen, read by CardTableBlockEntityRenderer. */
+    public static final Map<net.minecraft.core.BlockPos, int[]> TABLE_POKER_CHIPS = new HashMap<>();
+    /** Number of game (non-hand) slots per table, so renderer knows where hand slots start. */
+    public static final Map<net.minecraft.core.BlockPos, Integer> TABLE_POKER_GAME_SLOT_COUNT = new HashMap<>();
+    /** Folded bitmask per table. */
+    public static final Map<net.minecraft.core.BlockPos, Integer> TABLE_POKER_FOLDED = new HashMap<>();
+    /** All-in bitmask per table. */
+    public static final Map<net.minecraft.core.BlockPos, Integer> TABLE_POKER_ALLIN = new HashMap<>();
+    /** Starting chips for the current game — used to compute stack height as a fraction. */
+    public static final Map<net.minecraft.core.BlockPos, Integer> TABLE_POKER_STARTING_CHIPS = new HashMap<>();
 
     public static final MarkdownResource MARKDOWN = new MarkdownResource();
 
