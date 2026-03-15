@@ -15,14 +15,27 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
 public class CardTableBlockEntityRenderer implements BlockEntityRenderer<CardTableBlockEntity> {
+
+    // Chip colours by wealth tier (alternating body/shadow)
+    private static final int[][] CHIP_COLORS = {
+            { 0xFFAAAAAA, 0xFF888888 }, // white  – < 100
+            { 0xFFCC2222, 0xFFAA1111 }, // red    – 100-499
+            { 0xFF228822, 0xFF117711 }, // green  – 500-999
+            { 0xFF222222, 0xFF111111 }, // black  – 1000-1999
+            { 0xFF7722CC, 0xFF6611BB }, // purple – 2000+
+    };
+    private static final int[] CHIP_ALLIN  = { 0xFFFFCC00, 0xFFFFAA00 };
+    private static final int[] CHIP_FOLDED = { 0xFF555555, 0xFF444444 };
 
     private final BlockEntityRendererProvider.Context context;
 
@@ -123,11 +136,143 @@ public class CardTableBlockEntityRenderer implements BlockEntityRenderer<CardTab
                     o++;
                 }
             }
+
+            // ── Chip stacks on the 3-D table ──────────────────────────────────
+            BlockPos tablePos = blockEntity.getBlockPos();
+            int[] chips = ChartaModClient.TABLE_POKER_CHIPS.get(tablePos);
+            Integer gameSlotCountObj = ChartaModClient.TABLE_POKER_GAME_SLOT_COUNT.get(tablePos);
+            if (chips != null && gameSlotCountObj != null) {
+                int gameSlotCount = gameSlotCountObj;
+                int foldedMask = ChartaModClient.TABLE_POKER_FOLDED.getOrDefault(tablePos, 0);
+                int allInMask  = ChartaModClient.TABLE_POKER_ALLIN.getOrDefault(tablePos, 0);
+                // Hand slots follow game slots. Each hand slot index corresponds to player[i].
+                for (int pi = 0; pi < chips.length; pi++) {
+                    int handSlotIndex = gameSlotCount + pi;
+                    if (handSlotIndex >= gameSlots) break;
+
+                    GameSlot handSlot = blockEntity.getSlot(handSlotIndex);
+                    float hx = handSlot.lerpX(partialTick);
+                    float hy = handSlot.lerpY(partialTick);
+                    float angle = handSlot.lerpAngle(partialTick);
+
+                    // Place chip stack beside the hand: offset perpendicular to angle
+                    // (to the right of the cards from the player's perspective)
+                    float angleRad = (float) Math.toRadians(angle);
+                    float perpX =  (float) Math.cos(angleRad);
+                    float perpY = -(float) Math.sin(angleRad);
+
+                    // Offset: ~20 units to the side of the hand, in table units (1/160 block)
+                    float chipX = hx + perpX * 28f;
+                    float chipY = hy + perpY * 28f;
+
+                    drawChipStack3D(poseStack, bufferSource, packedLight,
+                            chipX, chipY, chips[pi],
+                            (foldedMask & (1 << pi)) != 0,
+                            (allInMask  & (1 << pi)) != 0,
+                            angle);
+                }
+            }
         }else if(!deckStack.isEmpty()) {
             poseStack.translate(0.5 + blockEntity.centerOffset.x, 0.275 + blockEntity.centerOffset.y, 0.0);
             context.getItemRenderer().renderStatic(deckStack, ItemDisplayContext.GROUND, packedLight, packedOverlay, poseStack, bufferSource, blockEntity.getLevel(), 1);
         }
         poseStack.popPose();
+    }
+
+    /**
+     * Draws a stack of chip discs in 3D world space (table surface).
+     * Coordinates are in "table units" (same space as GameSlot x/y, scale 1/160 of a block).
+     * Discs are quads lying flat on the table; the stack grows along the +Z axis (up from table).
+     *
+     * @param px      table-space X centre of stack
+     * @param py      table-space Y centre of stack
+     * @param chips   chip count
+     * @param angle   rotation angle of the hand slot (degrees) — not used for quads, kept for future use
+     */
+    private void drawChipStack3D(PoseStack poseStack, MultiBufferSource bufferSource, int packedLight,
+                                 float px, float py, int chips,
+                                 boolean folded, boolean allIn, float angle) {
+        if (chips <= 0) return;
+
+        // Number of discs: 1 per 100 chips, capped at 10
+        int numDiscs = Mth.clamp(chips / 100, 1, 10);
+
+        // Pick colour tier
+        int[] colorPair;
+        if (folded) {
+            colorPair = CHIP_FOLDED;
+        } else if (allIn) {
+            colorPair = CHIP_ALLIN;
+        } else if (chips >= 2000) {
+            colorPair = CHIP_COLORS[4];
+        } else if (chips >= 1000) {
+            colorPair = CHIP_COLORS[3];
+        } else if (chips >= 500) {
+            colorPair = CHIP_COLORS[2];
+        } else if (chips >= 100) {
+            colorPair = CHIP_COLORS[1];
+        } else {
+            colorPair = CHIP_COLORS[0];
+        }
+
+        // Disc dimensions in table units (table is 160×160 units = 1 block)
+        final float DISC_R  = 5f;   // radius
+        final float DISC_H  = 1.5f; // height of each disc layer
+        final float DISC_GAP = 0.5f; // gap between layers
+        final float STEP = DISC_H + DISC_GAP;
+
+        // We render in the coordinate space that's already active in render():
+        // scale(1/160), translate(x,y,z), scale(160) around each card.
+        // For chips we push a separate pose at 1/160 scale.
+        poseStack.pushPose();
+        poseStack.scale(1f / 160f, 1f / 160f, 1f / 160f);
+
+        VertexConsumer consumer = bufferSource.getBuffer(
+                ChartaModClient.getRenderTypeManager().chipStack());
+
+        for (int d = 0; d < numDiscs; d++) {
+            float zBase = d * STEP;
+            int bodyColor = (d % 2 == 0) ? colorPair[0] : colorPair[1];
+            float r = ((bodyColor >> 16) & 0xFF) / 255f;
+            float gr = ((bodyColor >> 8)  & 0xFF) / 255f;
+            float b  = ( bodyColor        & 0xFF) / 255f;
+
+            float zt = zBase + DISC_H;
+            PoseStack.Pose e = poseStack.last();
+
+            float x0 = px - DISC_R, x1 = px + DISC_R;
+            float y0 = py - DISC_R, y1 = py + DISC_R;
+
+            float zb = zBase;
+            // Side faces (darker)
+            drawQuad(e, consumer, x0, y0, zb, x1, y0, zb, x1, y0, zt, x0, y0, zt,
+                    r * 0.7f, gr * 0.7f, b * 0.7f, 1f, packedLight);
+            drawQuad(e, consumer, x1, y0, zb, x1, y1, zb, x1, y1, zt, x1, y0, zt,
+                    r * 0.7f, gr * 0.7f, b * 0.7f, 1f, packedLight);
+            drawQuad(e, consumer, x1, y1, zb, x0, y1, zb, x0, y1, zt, x1, y1, zt,
+                    r * 0.7f, gr * 0.7f, b * 0.7f, 1f, packedLight);
+            drawQuad(e, consumer, x0, y1, zb, x0, y0, zb, x0, y0, zt, x0, y1, zt,
+                    r * 0.7f, gr * 0.7f, b * 0.7f, 1f, packedLight);
+            // Top face (full colour)
+            drawQuad(e, consumer, x0, y0, zt, x1, y0, zt, x1, y1, zt, x0, y1, zt,
+                    r, gr, b, 1f, packedLight);
+        }
+
+        poseStack.popPose();
+    }
+
+    /** Emit 4 vertices forming a QUADS quad for POSITION_COLOR_LIGHTMAP format. */
+    private static void drawQuad(PoseStack.Pose e, VertexConsumer vc,
+                                 float x0, float y0, float z0,
+                                 float x1, float y1, float z1,
+                                 float x2, float y2, float z2,
+                                 float x3, float y3, float z3,
+                                 float r, float g, float b, float a,
+                                 int light) {
+        vc.addVertex(e.pose(), x0, y0, z0).setColor(r, g, b, a).setLight(light);
+        vc.addVertex(e.pose(), x1, y1, z1).setColor(r, g, b, a).setLight(light);
+        vc.addVertex(e.pose(), x2, y2, z2).setColor(r, g, b, a).setLight(light);
+        vc.addVertex(e.pose(), x3, y3, z3).setColor(r, g, b, a).setLight(light);
     }
 
     public static void drawCard(Deck deck, Card card, int packedLight, int packedOverlay, PoseStack poseStack, MultiBufferSource bufferSource, float x, float y, Vector3f normal) {

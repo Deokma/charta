@@ -32,32 +32,79 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
     public static final int ACTION_RAISE_MIN = 102;
     public static final int ACTION_ALL_IN    = 103;
 
-    // --- Game Options ---
-    // GameOption.Number stores the value as a Java byte (-128..127).
-    // ALL min/max/default values must stay within 0..127 to avoid overflow.
-    // We use a 10× scale: displayed value = stored byte × 10 chips.
-    //   stored 10  → 100 chips (min)
-    //   stored 50  → 500 chips (default)
-    //   stored 100 → 1000 chips (max)
-    private final GameOption.Number STARTING_CHIPS_OPT = new GameOption.Number(
-            50, 10, 100,
-            Component.translatable("rule.charta.texas_holdem.starting_chips"),
-            Component.translatable("rule.charta.texas_holdem.starting_chips.description"));
+    // -------------------------------------------------------------------------
+    // Game Options
+    // GameOption.Number stores values as Java byte (-128..127).
+    // All default/min/max must stay in 0..127.
+    //
+    // STARTING_CHIPS: stored as ×100 chips (1..20 → 100..2000 chips).
+    //   The slider label is overridden via a custom subclass so the player
+    //   sees "1000 chips", not "10".
+    //
+    // BIG_BLIND: stored directly (2..50 chips, fits in byte).
+    //
+    // RAISE_MULTIPLIER: 1..5 × big-blind amounts per raise step.
+    //   1 = raise by 1×BB, 5 = raise by 5×BB.
+    // -------------------------------------------------------------------------
 
-    // Big blind stored as direct chip value (2..20), all fit in a byte.
+    /** Chips option that shows actual value (×100) in the slider label. */
+    private final GameOption.Number STARTING_CHIPS_OPT = new GameOption.Number(
+            5, 1, 20,
+            Component.translatable("rule.charta.texas_holdem.starting_chips"),
+            Component.translatable("rule.charta.texas_holdem.starting_chips.description")) {
+        @Override
+        public Widget getWidget(java.util.function.Consumer<Integer> consumer,
+                                net.minecraft.client.gui.Font font,
+                                int width, int height, boolean showcase) {
+            // Show "Starting Chips: 1000" instead of "Starting Chips: 10"
+            java.util.function.Function<Integer, net.minecraft.network.chat.Component> msg =
+                    i -> this.getTitle().copy().append(": ").append(Integer.toString(i * 100));
+            double initPos = (20 > 1) ? (double)(this.get() - 1) / (20 - 1) : 0.0;
+            net.minecraft.client.gui.components.AbstractSliderButton slider =
+                    new net.minecraft.client.gui.components.AbstractSliderButton(
+                            0, 0, width, height, msg.apply(this.get()), initPos) {
+                        @Override protected void updateMessage() { this.setMessage(msg.apply(STARTING_CHIPS_OPT.get())); }
+                        @Override protected void applyValue()    { STARTING_CHIPS_OPT.set(net.minecraft.util.Mth.clamp(net.minecraft.util.Mth.floor(net.minecraft.util.Mth.lerp(this.value, 1, 20)), 1, 20)); }
+                        @Override protected void renderScrollingString(@org.jetbrains.annotations.NotNull net.minecraft.client.gui.GuiGraphics g,
+                                                                       @org.jetbrains.annotations.NotNull net.minecraft.client.gui.Font f, int w, int c) {
+                            super.renderScrollingString(g, f, w, 16777215 | net.minecraft.util.Mth.ceil(this.alpha * 255.0F) << 24);
+                        }
+                    };
+            slider.setTooltip(net.minecraft.client.gui.components.Tooltip.create(this.getDescription()));
+            slider.active = !showcase;
+            return new Widget(slider);
+        }
+    };
+
     private final GameOption.Number BIG_BLIND_OPT = new GameOption.Number(
-            10, 2, 20,
+            10, 2, 50,
             Component.translatable("rule.charta.texas_holdem.big_blind"),
             Component.translatable("rule.charta.texas_holdem.big_blind.description"));
 
-    /** Returns the actual starting chip count (stored value × 10). */
+    /** Raise = RAISE_MULTIPLIER_OPT × big blind. Values 1..5. */
+    private final GameOption.Number RAISE_MULTIPLIER_OPT = new GameOption.Number(
+            1, 1, 5,
+            Component.translatable("rule.charta.texas_holdem.raise_multiplier"),
+            Component.translatable("rule.charta.texas_holdem.raise_multiplier.description"));
+
+    /** Returns actual starting chips (stored value × 100). */
     private int getStartingChips() {
-        return STARTING_CHIPS_OPT.get() * 10;
+        return STARTING_CHIPS_OPT.get() * 100;
     }
 
-    /** Returns the big blind amount (stored directly). */
+    /** Returns big blind chip amount. */
     private int getBigBlind() {
         return BIG_BLIND_OPT.get();
+    }
+
+    /** Returns raise amount for one raise action (multiplier × big blind). */
+    private int getRaiseAmount() {
+        return RAISE_MULTIPLIER_OPT.get() * getBigBlind();
+    }
+
+    /** Public accessor for ContainerData sync. */
+    public int getRaiseAmountPublic() {
+        return getRaiseAmount();
     }
 
     // --- Synced game state (public for TexasHoldemMenu ContainerData) ---
@@ -76,13 +123,15 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
 
     // --- Slots ---
     // slots 0-4: individual community card positions (board cards), face-up
-    // slot  5:   draw pile (visible face-down pile on the left of the board)
     public static final int SLOT_COMMUNITY_FIRST = 0;
     public static final int SLOT_COMMUNITY_LAST  = 4;
-    public static final int SLOT_DRAW_PILE       = 5;
 
     public final GameSlot[] communitySlots = new GameSlot[5];
-    private final GameSlot drawPile;
+
+    // Draw pile is NOT a GameSlot — it's never rendered on the 3D table and never
+    // needs to be synced to clients. Using a plain LinkedList avoids the off-screen
+    // rendering glitch that occurred when it was registered at x=-200, y=-200.
+    private final LinkedList<Card> drawPile = new LinkedList<>();
 
     // How many community cards are currently visible (0-5)
     public int communityCardCount = 0;
@@ -116,12 +165,19 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
                 @Override public boolean canRemoveCard(CardPlayer p, int idx)               { return false; }
             });
         }
+        // drawPile is a plain LinkedList — NOT a GameSlot; no addSlot() needed.
+    }
 
-        // Draw pile: off-screen — the 3D pile isn't needed visually; server manages cards internally
-        this.drawPile = addSlot(new GameSlot(new LinkedList<>(), -200f, -200f, 0f, 0f) {
-            @Override public boolean canInsertCard(CardPlayer p, List<Card> c, int idx) { return false; }
-            @Override public boolean canRemoveCard(CardPlayer p, int idx)               { return false; }
-        });
+    // Override-style helper to deal from the plain LinkedList draw pile.
+    private void dealFromPile(CardPlayer player, int count) {
+        for (int i = 0; i < count; i++) {
+            if (drawPile.isEmpty()) break;
+            Card card = drawPile.removeLast();
+            // Ensure card is face-up for the recipient
+            if (card.flipped()) card.flip();
+            getPlayerHand(player).add(card);
+            getCensoredHand(player).add(new Card());
+        }
     }
 
     // =========================================================================
@@ -187,7 +243,7 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
 
     @Override
     public List<GameOption<?>> getOptions() {
-        return List.of(STARTING_CHIPS_OPT, BIG_BLIND_OPT);
+        return List.of(STARTING_CHIPS_OPT, BIG_BLIND_OPT, RAISE_MULTIPLIER_OPT);
     }
 
     @Override
@@ -311,7 +367,7 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
             if (!copy.flipped()) copy.flip();
             drawPile.add(copy);
         }
-        drawPile.shuffle();
+        Collections.shuffle(drawPile);
 
         // Schedule card dealing with small animation delays
         for (int round = 0; round < 2; round++) {
@@ -320,7 +376,7 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
                 scheduledActions.add(() -> {
                     CardPlayer p = players.get(pi);
                     p.playSound(ModSounds.CARD_DRAW.get());
-                    dealCards(drawPile, p, 1);
+                    dealFromPile(p, 1);
                 });
                 scheduledActions.add(() -> {}); // delay tick
             }
@@ -502,8 +558,7 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
     }
 
     private int getMinRaise() {
-        int bigBlind = getBigBlind();
-        return Math.max(bigBlind, currentBet); // at minimum raise by one big blind
+        return getRaiseAmount();
     }
 
     /** Builds the list of players who must act, starting from startIdx, with lastToActIdx acting last. */
@@ -612,7 +667,6 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
             if (!folded[i]) contenders.add(i);
         }
 
-        // Reveal contender hands
         revealedPlayers.addAll(contenders);
 
         if (contenders.isEmpty()) {
@@ -620,7 +674,7 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
             return;
         }
 
-        // Find best hand score
+        // Evaluate all contenders
         long bestScore = Long.MIN_VALUE;
         for (int idx : contenders) {
             List<Card> allCards = new ArrayList<>(getPlayerHand(players.get(idx)).stream().toList());
@@ -637,25 +691,50 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
             if (HandEvaluator.evaluate(allCards) == winningScore) winners.add(idx);
         }
 
-        // Distribute pot
         int share = pot / winners.size();
+
         for (int winnerIdx : winners) {
             chips[winnerIdx] += share;
-            play(players.get(winnerIdx),
-                    Component.translatable("message.charta.texas_holdem.wins_pot", share));
-        }
-        pot = 0;
-
-        // Announce winning hand name
-        for (int winnerIdx : winners) {
             List<Card> allCards = new ArrayList<>(getPlayerHand(players.get(winnerIdx)).stream().toList());
             allCards.addAll(community);
             String handName = HandEvaluator.getHandName(allCards);
-            play(players.get(winnerIdx),
-                    Component.translatable("message.charta.texas_holdem.hand_name", handName));
+            Component handComp = Component.literal(handName).withStyle(ChatFormatting.AQUA);
+
+            // History table entry: "PlayerName won 200♦ with Full House"
+            table(Component.translatable(
+                    "message.charta.texas_holdem.showdown_result",
+                    players.get(winnerIdx).getColoredName(),
+                    Component.literal(String.valueOf(share)).withStyle(ChatFormatting.GOLD),
+                    handComp));
+
+            // Direct message shown under the winner's avatar in game history panel
+//            play(players.get(winnerIdx),
+//                    Component.translatable("message.charta.texas_holdem.showdown_result_short",
+//                            Component.literal("+" + share + "♦").withStyle(ChatFormatting.GOLD),
+//                            handComp));
         }
 
-        onHandComplete();
+        // Show each non-winning contender's hand in history
+        for (int idx : contenders) {
+            if (!winners.contains(idx)) {
+                List<Card> allCards = new ArrayList<>(getPlayerHand(players.get(idx)).stream().toList());
+                allCards.addAll(community);
+                String handName = HandEvaluator.getHandName(allCards);
+                play(players.get(idx),
+                        Component.translatable("message.charta.texas_holdem.hand_name",
+                                Component.literal(handName).withStyle(ChatFormatting.GRAY)));
+            }
+        }
+
+        pot = 0;
+
+        // Pause for ~3 seconds (60 ticks) so clients can read the showdown result.
+        // isGameReady=false activates the scheduledActions processing in Game.tick().
+        for (int i = 0; i < 60; i++) {
+            scheduledActions.add(() -> {});
+        }
+        scheduledActions.add(this::onHandComplete);
+        isGameReady = false;
     }
 
     /** Called when all but one player folds mid-round. */
@@ -709,7 +788,7 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
     @Override
     public void endGame() {
         if (isGameOver) return;
-        isGameOver = true;  // set FIRST — prevents re-entrant callbacks from looping
+        isGameOver = true;
 
         // Award any unclaimed pot to the last non-folded player
         if (pot > 0) {
@@ -724,13 +803,12 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
             }
         }
 
-        // Unblock any pending CompletableFuture so the server thread doesn't hang.
-        // isGameOver is already true so their afterPlay callbacks will see it and return early.
+        // Unblock pending futures — isGameOver=true prevents loops
         pendingActors.clear();
         scheduledActions.clear();
         for (CardPlayer p : players) p.play(null);
 
-        // Find session winner (highest chip count)
+        // Find the player with most chips (session winner)
         int sessionWinnerIdx = -1;
         int maxChips = 0;
         int playersWithChips = 0;
@@ -744,7 +822,9 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
             }
         }
 
-        if (playersWithChips == 1 && sessionWinnerIdx >= 0) {
+        // If only one player has chips, OR if someone left and one player remains —
+        // always declare a winner (never Draw in Texas Hold'em).
+        if (sessionWinnerIdx >= 0) {
             CardPlayer winner = players.get(sessionWinnerIdx);
             winner.sendTitle(
                     Component.translatable("message.charta.you_won").withStyle(ChatFormatting.GREEN),
@@ -758,6 +838,7 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
             }
             table(Component.translatable("message.charta.won_the_match", winner.getColoredName()));
         } else {
+            // Genuinely no chips anywhere (shouldn't happen normally)
             players.forEach(p -> p.sendTitle(
                     Component.translatable("message.charta.draw").withStyle(ChatFormatting.YELLOW),
                     Component.translatable("message.charta.no_winner")));
@@ -840,72 +921,46 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
     /**
      * Evaluates the best 5-card poker hand from a set of 2-7 cards.
      * Returns a score where a higher value beats a lower value.
+     *
+     * Score = category * BASE + pack5(ranks)
+     *   category: 8=Str.Flush, 7=Quads, 6=FullHouse, 5=Flush,
+     *             4=Straight, 3=Trips, 2=TwoPair, 1=OnePair, 0=HighCard
+     *   pack5: five rank values packed big-endian in base-100
+     *          max = 14*100^4 + ... ≈ 1.41×10^9  <  BASE = 10^10  ✓
      */
     public static final class HandEvaluator {
 
-        /** Maximum possible score (Royal Flush: 8 * BASE + max kicker). */
-        public static final long MAX_SCORE = 9L * 100_000_000L;
-
-        private static final long BASE = 100_000_000L;
+        public static final long BASE      = 10_000_000_000L; // 10^10
+        public static final long MAX_SCORE = 9L * BASE;
 
         private HandEvaluator() {}
 
-        /**
-         * Returns the best 5-card hand score from up to 7 cards.
-         * Higher score = better hand.
-         */
+        // ------------------------------------------------------------------ //
+        // Public API
+        // ------------------------------------------------------------------ //
+
         public static long evaluate(List<Card> cards) {
             int n = cards.size();
             if (n < 5) return 0L;
-
             long best = Long.MIN_VALUE;
-            // Generate all C(n, 5) combinations
             for (int i = 0; i < n - 4; i++)
-                for (int j = i + 1; j < n - 3; j++)
-                    for (int k = j + 1; k < n - 2; k++)
-                        for (int l = k + 1; l < n - 1; l++)
-                            for (int m = l + 1; m < n; m++) {
-                                long score = evaluate5(
-                                        cards.get(i), cards.get(j), cards.get(k),
+                for (int j = i+1; j < n-3; j++)
+                    for (int k = j+1; k < n-2; k++)
+                        for (int l = k+1; l < n-1; l++)
+                            for (int m = l+1; m < n; m++) {
+                                long s = eval5(cards.get(i), cards.get(j), cards.get(k),
                                         cards.get(l), cards.get(m));
-                                if (score > best) best = score;
+                                if (s > best) best = s;
                             }
             return best;
         }
 
-        /** Returns the human-readable name of the best hand. */
         public static String getHandName(List<Card> cards) {
-            int n = cards.size();
-            if (n < 5) return "High Card";
-            long best = Long.MIN_VALUE;
-            int[] bestRanks = null;
-            boolean[] bestFlush = null;
-
-            for (int i = 0; i < n - 4; i++)
-                for (int j = i + 1; j < n - 3; j++)
-                    for (int k = j + 1; k < n - 2; k++)
-                        for (int l = k + 1; l < n - 1; l++)
-                            for (int m = l + 1; m < n; m++) {
-                                Card[] five = {cards.get(i), cards.get(j), cards.get(k), cards.get(l), cards.get(m)};
-                                long score = evaluate5(five[0], five[1], five[2], five[3], five[4]);
-                                if (score > best) {
-                                    best      = score;
-                                    bestRanks = new int[]{
-                                            rankVal(five[0]), rankVal(five[1]), rankVal(five[2]),
-                                            rankVal(five[3]), rankVal(five[4])};
-                                    bestFlush = new boolean[]{
-                                            five[0].suit() == five[1].suit() && five[1].suit() == five[2].suit()
-                                                    && five[2].suit() == five[3].suit() && five[3].suit() == five[4].suit()};
-                                }
-                            }
-
-            if (bestRanks == null) return "High Card";
-            long category = best / BASE;
-            return switch ((int) category) {
-                case 8 -> {
-                    Arrays.sort(bestRanks);
-                    yield bestRanks[4] == 14 ? "Royal Flush" : "Straight Flush";
-                }
+            long best = evaluate(cards);
+            if (best <= 0) return "High Card";
+            int cat = (int)(best / BASE);
+            return switch (cat) {
+                case 8 -> (best % BASE) / (long)Math.pow(100, 4) == 14 ? "Royal Flush" : "Straight Flush";
                 case 7 -> "Four of a Kind";
                 case 6 -> "Full House";
                 case 5 -> "Flush";
@@ -917,88 +972,78 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
             };
         }
 
-        private static long evaluate5(Card c1, Card c2, Card c3, Card c4, Card c5) {
-            int[] r = {rankVal(c1), rankVal(c2), rankVal(c3), rankVal(c4), rankVal(c5)};
-            boolean flush = c1.suit() == c2.suit() && c2.suit() == c3.suit()
-                    && c3.suit() == c4.suit() && c4.suit() == c5.suit();
+        // ------------------------------------------------------------------ //
+        // Core 5-card evaluator
+        // ------------------------------------------------------------------ //
 
-            Arrays.sort(r);
+        private static long eval5(Card c1, Card c2, Card c3, Card c4, Card c5) {
+            int[] r = { rv(c1), rv(c2), rv(c3), rv(c4), rv(c5) };
+            Arrays.sort(r); // ascending
+
+            boolean flush    = c1.suit()==c2.suit() && c2.suit()==c3.suit()
+                    && c3.suit()==c4.suit() && c4.suit()==c5.suit();
             boolean straight = isStraight(r);
 
-            // Count rank occurrences
-            Map<Integer, Integer> freq = new HashMap<>();
+            // Frequencies: group ranks by how many times they appear
+            Map<Integer,Integer> freq = new HashMap<>();
             for (int rank : r) freq.merge(rank, 1, Integer::sum);
 
-            // Group by count
-            List<Integer> pairs     = new ArrayList<>();
-            List<Integer> triples   = new ArrayList<>();
-            List<Integer> quads     = new ArrayList<>();
+            // Sort groups: primary = count desc, secondary = rank desc
+            List<Map.Entry<Integer,Integer>> groups = new ArrayList<>(freq.entrySet());
+            groups.sort((a, b) -> a.getValue().equals(b.getValue())
+                    ? b.getKey() - a.getKey()    // same count → higher rank first
+                    : b.getValue() - a.getValue()); // else higher count first
 
-            for (Map.Entry<Integer, Integer> e : freq.entrySet()) {
-                switch (e.getValue()) {
-                    case 2 -> pairs.add(e.getKey());
-                    case 3 -> triples.add(e.getKey());
-                    case 4 -> quads.add(e.getKey());
-                }
-            }
+            // Build ordered rank list: repeated according to group order
+            // e.g. Full House KKK22 → [13,13,13,2,2]
+            int[] ord = new int[5];
+            int pos = 0;
+            for (Map.Entry<Integer,Integer> e : groups)
+                for (int i = 0; i < e.getValue(); i++)
+                    ord[pos++] = e.getKey();
 
-            // Determine hand category and encode score
-            if (straight && flush)  return 8 * BASE + kicker(r, 5);
-            if (!quads.isEmpty())   return 7 * BASE + kicker(new int[]{quads.get(0)}, 1);
-            if (!triples.isEmpty() && !pairs.isEmpty())
-                return 6 * BASE + kicker(new int[]{triples.get(0), pairs.get(0)}, 2);
-            if (flush)              return 5 * BASE + kicker(r, 5);
-            if (straight)          return 4 * BASE + kicker(r, 5);
-            if (!triples.isEmpty()) return 3 * BASE + kicker(new int[]{triples.get(0)}, 1);
-            if (pairs.size() >= 2) {
-                pairs.sort(Comparator.reverseOrder());
-                return 2 * BASE + kicker(new int[]{pairs.get(0), pairs.get(1)}, 2);
-            }
-            if (pairs.size() == 1)  return 1 * BASE + kicker(new int[]{pairs.get(0)}, 1)
-                    + highCards(r, pairs.get(0), 3);
-            return kicker(r, 5); // High card
+            int topCount = groups.get(0).getValue();
+            boolean hasTrip = topCount == 3;
+            boolean hasPair = groups.stream().anyMatch(e -> e.getValue() == 2);
+            boolean hasTwoPairs = groups.stream().filter(e -> e.getValue()==2).count() >= 2;
+
+            if (straight && flush)              return 8*BASE + straightPack(r);
+            if (topCount == 4)                  return 7*BASE + pack5(ord);
+            if (hasTrip && hasPair)             return 6*BASE + pack5(ord);
+            if (flush)                          return 5*BASE + pack5(r[4],r[3],r[2],r[1],r[0]);
+            if (straight)                       return 4*BASE + straightPack(r);
+            if (hasTrip)                        return 3*BASE + pack5(ord);
+            if (hasTwoPairs)                    return 2*BASE + pack5(ord);
+            if (hasPair)                        return 1*BASE + pack5(ord);
+            return pack5(r[4],r[3],r[2],r[1],r[0]); // High card
+        }
+
+        /** Packs 5 rank values big-endian in base-100. */
+        private static long pack5(int[] ord) {
+            return pack5(ord[0], ord[1], ord[2], ord[3], ord[4]);
+        }
+
+        private static long pack5(int a, int b, int c, int d, int e) {
+            return ((((long)a * 100 + b) * 100 + c) * 100 + d) * 100 + e;
+        }
+
+        /** Straight pack — handle wheel (A-2-3-4-5 → 5-high). */
+        private static long straightPack(int[] sorted) {
+            // Wheel: sorted=[2,3,4,5,14] → top card is 5
+            if (sorted[4] == 14 && sorted[0] == 2 && sorted[3] == 5)
+                return pack5(5, 4, 3, 2, 1);
+            return pack5(sorted[4], sorted[3], sorted[2], sorted[1], sorted[0]);
         }
 
         private static boolean isStraight(int[] sorted) {
-            // Normal straight
-            boolean normal = sorted[4] - sorted[0] == 4
-                    && sorted[1] == sorted[0] + 1
-                    && sorted[2] == sorted[1] + 1
-                    && sorted[3] == sorted[2] + 1;
-            // Wheel: A-2-3-4-5
-            boolean wheel = sorted[4] == 14
-                    && sorted[0] == 2 && sorted[1] == 3 && sorted[2] == 4 && sorted[3] == 5;
+            boolean normal = sorted[4]-sorted[0]==4 && sorted[1]==sorted[0]+1
+                    && sorted[2]==sorted[1]+1 && sorted[3]==sorted[2]+1;
+            boolean wheel  = sorted[4]==14 && sorted[0]==2 && sorted[1]==3
+                    && sorted[2]==4  && sorted[3]==5;
             return normal || wheel;
         }
 
-        /** Encodes the top N ranks as a long kicker value (big-endian, each rank in 2 digits). */
-        private static long kicker(int[] ranks, int count) {
-            // Sort descending
-            int[] sorted = ranks.clone();
-            Arrays.sort(sorted);
-            long result = 0;
-            int taken = 0;
-            for (int i = sorted.length - 1; i >= 0 && taken < count; i--) {
-                result = result * 100L + sorted[i];
-                taken++;
-            }
-            return result;
-        }
-
-        /** Encodes high-card kickers excluding the excluded rank, up to count cards. */
-        private static long highCards(int[] sorted, int exclude, int count) {
-            long result = 0;
-            int taken = 0;
-            for (int i = sorted.length - 1; i >= 0 && taken < count; i--) {
-                if (sorted[i] != exclude) {
-                    result = result * 100L + sorted[i];
-                    taken++;
-                }
-            }
-            return result;
-        }
-
-        private static int rankVal(Card card) {
+        private static int rv(Card card) {
             Rank rank = card.rank();
             if (rank == Ranks.ACE) return 14;
             return rank.ordinal();

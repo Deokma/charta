@@ -154,7 +154,9 @@ public abstract class GameOption<T> {
 
         public Widget getWidget(Consumer<Integer> consumer, Font font, int width, int height, boolean showcase) {
             Function<Integer, Component> message = (i) -> this.getTitle().copy().append(": ").append(Integer.toString(i));
-            AbstractSliderButton slider = new AbstractSliderButton(0, 0, width, height, message.apply(this.get()), this.get() * (1.0/(max - min))) {
+            // Correct normalised position: (value - min) / (max - min)
+            double initPos = (max > min) ? (double)(this.get() - min) / (max - min) : 0.0;
+            AbstractSliderButton slider = new AbstractSliderButton(0, 0, width, height, message.apply(this.get()), initPos) {
                 private static final ResourceLocation SLIDER_HANDLE_SPRITE = ResourceLocation.withDefaultNamespace("widget/slider_handle");
 
                 @Override
@@ -180,7 +182,7 @@ public abstract class GameOption<T> {
             };
             slider.setTooltip(Tooltip.create(this.getDescription()));
             this.consumer = i -> {
-                slider.setValue(i * (1.0/(max - min)));
+                slider.setValue((max > min) ? (double)(i - min) / (max - min) : 0.0);
                 consumer.accept(i);
             };
             slider.active = !showcase;

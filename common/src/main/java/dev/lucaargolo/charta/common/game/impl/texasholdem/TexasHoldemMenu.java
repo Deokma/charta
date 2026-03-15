@@ -1,6 +1,7 @@
 package dev.lucaargolo.charta.common.game.impl.texasholdem;
 
 import dev.lucaargolo.charta.common.game.Games;
+import dev.lucaargolo.charta.common.game.api.CardPlayer;
 import dev.lucaargolo.charta.common.game.api.game.GameType;
 import dev.lucaargolo.charta.common.menu.AbstractCardMenu;
 import dev.lucaargolo.charta.common.menu.CardSlot;
@@ -26,7 +27,8 @@ public class TexasHoldemMenu extends AbstractCardMenu<TexasHoldemGame, TexasHold
     // [20]     phaseOrdinal
     // [21]     dealerIndex
     // [22]     communityCardCount
-    // Total: 23 tracked integers
+    // [23]     raiseAmount  (computed: raiseMultiplier × bigBlind)
+    // Total: 24 tracked integers
 
     private static final int MAX_PLAYERS          = 8;
     private static final int OFFSET_CHIPS         = 0;
@@ -38,7 +40,8 @@ public class TexasHoldemMenu extends AbstractCardMenu<TexasHoldemGame, TexasHold
     private static final int OFFSET_PHASE         = MAX_PLAYERS * 2 + 4;
     private static final int OFFSET_DEALER        = MAX_PLAYERS * 2 + 5;
     private static final int OFFSET_COMMUNITY_CNT = MAX_PLAYERS * 2 + 6;
-    private static final int DATA_COUNT           = MAX_PLAYERS * 2 + 7;
+    private static final int OFFSET_RAISE_AMOUNT  = MAX_PLAYERS * 2 + 7;
+    private static final int DATA_COUNT           = MAX_PLAYERS * 2 + 8;
 
     private final ContainerData data = new ContainerData() {
 
@@ -71,6 +74,8 @@ public class TexasHoldemMenu extends AbstractCardMenu<TexasHoldemGame, TexasHold
                 return g.dealerIndex;
             } else if (index == OFFSET_COMMUNITY_CNT) {
                 return g.communityCardCount;
+            } else if (index == OFFSET_RAISE_AMOUNT) {
+                return g.getRaiseAmountPublic();
             }
             return 0;
         }
@@ -101,6 +106,7 @@ public class TexasHoldemMenu extends AbstractCardMenu<TexasHoldemGame, TexasHold
             } else if (index == OFFSET_COMMUNITY_CNT) {
                 g.communityCardCount = value;
             }
+            // OFFSET_RAISE_AMOUNT is read-only (computed server-side)
         }
 
         @Override
@@ -112,27 +118,40 @@ public class TexasHoldemMenu extends AbstractCardMenu<TexasHoldemGame, TexasHold
     public TexasHoldemMenu(int containerId, Inventory inventory, Definition definition) {
         super(ModMenuTypes.TEXAS_HOLDEM.get(), containerId, inventory, definition);
 
-        // NOTE: No addTopPreview() — Texas Hold'em always has exactly 2 hole cards
-        // per player, so the card-count preview in the top bar is unnecessary.
+        // --- Player hand previews (right of each avatar, not left) ---
+        // addTopPreview() uses hardcoded imgW=140 which places cards LEFT of the avatar.
+        // We replicate its logic with imgW=256 and shift cards to x = head_x + 26.
+        // GameScreen.renderTopBar places head at screen_x = w/2 - playersWidth/2 + i*(slotW+gap)
+        // In menu coords: head_x_menu = imgW/2 - playersWidth/2 + i*(slotW+gap)
+        {
+            float slotW       = CardSlot.getWidth(CardSlot.Type.PREVIEW) + 28f; // 69
+            int   n           = definition.players().length;
+            float playersWidth = n * slotW + (n - 1f) * (slotW / 10f);
+            for (int i = 0; i < n; i++) {
+                float headX = 256f / 2f - playersWidth / 2f + i * (slotW + slotW / 10f);
+                float cardX = headX + 26f; // place cards to the right of the avatar
+                CardPlayer p = this.game.getPlayers().get(i);
+                addCardSlot(new CardSlot<>(this.game,
+                        g -> g.getCensoredHand(cardPlayer, p),
+                        cardX, 7f, CardSlot.Type.PREVIEW));
+            }
+        }
 
-        // 5 individual community card slots (game slots 0..4).
-        // imageWidth=200; 5 cards×25 + 4 gaps×8 = 157px → centred startX ≈ 21
+        // --- 5 community card slots ---
+        // imageWidth=256; gap=20px as set by the user.
         float cW     = 25f;
-        float gapC   = 16f;
-        float totalC = 5 * cW + 4 * gapC;     // 157
-        float startC = (256f - totalC) / 2f;   // 21.5
+        float gapC   = 20f;
+        float totalC = 5 * cW + 4 * gapC;     // 205
+        float startC = (256f - totalC) / 2f;   // 25.5
         for (int i = 0; i < 5; i++) {
             final int slotIdx = TexasHoldemGame.SLOT_COMMUNITY_FIRST + i;
             float slotX = startC + i * (cW + gapC);
-            float slotY = 55f;
+            float slotY = 60f;
             addCardSlot(new CardSlot<>(this.game, g -> g.getSlot(slotIdx), slotX, slotY));
         }
 
-        // Player's own hole cards — shown at the bottom of the screen.
-        // For HORIZONTAL type the framework computes:
-        //   screen_y = slot.y + screenHeight - cardHeight
-        // Using y=-5 matches CrazyEights and places cards just above the bottom bar.
-        float handX = (200f - CardSlot.getWidth(CardSlot.Type.HORIZONTAL)) / 2f; // 25
+        // --- Player's own hole cards at bottom ---
+        float handX = (256f - CardSlot.getWidth(CardSlot.Type.HORIZONTAL)) / 2f; // 53
         addCardSlot(new HandSlot<>(this.game, g -> true, this.getCardPlayer(),
                 handX, -5f, CardSlot.Type.HORIZONTAL));
 
@@ -177,6 +196,11 @@ public class TexasHoldemMenu extends AbstractCardMenu<TexasHoldemGame, TexasHold
 
     public int getCommunityCardCount() {
         return data.get(OFFSET_COMMUNITY_CNT);
+    }
+
+    /** Returns the current raise step size (raiseMultiplier × bigBlind), synced from server. */
+    public int getRaiseAmount() {
+        return data.get(OFFSET_RAISE_AMOUNT);
     }
 
     /** How many chips the local player still needs to put in to match the current bet. */

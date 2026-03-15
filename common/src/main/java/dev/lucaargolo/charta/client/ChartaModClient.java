@@ -29,6 +29,7 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.NoopRenderer;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
@@ -44,6 +45,7 @@ import org.apache.commons.lang3.tuple.Triple;
 
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.function.Supplier;
 
 public abstract class ChartaModClient {
@@ -52,6 +54,16 @@ public abstract class ChartaModClient {
 
     public static final LinkedList<Triple<Component, Integer, Component>> LOCAL_HISTORY = new LinkedList<>();
     public static final HashMap<ResourceLocation, byte[]> LOCAL_OPTIONS = new HashMap<>();
+
+    /** Фишки игроков по позиции стола. Заполняется в TexasHoldemScreen, читается в рендере стола. */
+    public static final Map<BlockPos, int[]> TABLE_POKER_CHIPS = new HashMap<>();
+    /** Количество "игровых" слотов стола, чтобы понимать, где начинаются hand slots игроков. */
+    public static final Map<BlockPos, Integer> TABLE_POKER_GAME_SLOT_COUNT = new HashMap<>();
+    /** Битовая маска folded-игроков по позиции стола. */
+    public static final Map<BlockPos, Integer> TABLE_POKER_FOLDED = new HashMap<>();
+
+    /** Битовая маска all-in игроков по позиции стола. */
+    public static final Map<BlockPos, Integer> TABLE_POKER_ALLIN = new HashMap<>();
 
     public static final MarkdownResource MARKDOWN = new MarkdownResource();
 

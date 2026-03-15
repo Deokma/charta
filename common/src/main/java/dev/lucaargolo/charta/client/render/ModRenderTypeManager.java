@@ -34,6 +34,21 @@ public abstract class ModRenderTypeManager extends RenderType {
             )
     );
 
+    private final RenderType CHIP_STACK = createComposite(
+            "chip_stack",
+            DefaultVertexFormat.POSITION_COLOR_LIGHTMAP,
+            VertexFormat.Mode.QUADS,
+            1536,
+            false,
+            false,
+            RenderType.CompositeState.builder()
+                    .setShaderState(POSITION_COLOR_LIGHTMAP_SHADER)
+                    .setTextureState(NO_TEXTURE)
+                    .setCullState(NO_CULL)
+                    .setLightmapState(LIGHTMAP)
+                    .createCompositeState(false)
+    );
+
     private final RenderType IRON_LEASH = createComposite(
             "iron_leash",
             DefaultVertexFormat.POSITION_COLOR_LIGHTMAP,
@@ -58,4 +73,5 @@ public abstract class ModRenderTypeManager extends RenderType {
         return IRON_LEASH;
     }
 
+    public final RenderType chipStack() { return CHIP_STACK; }
 }

@@ -459,11 +459,12 @@
   "button.charta.texas_holdem.check": "Check",
   "button.charta.texas_holdem.raise": "Raise",
   "button.charta.texas_holdem.allin": "All-In",
-
+  "message.charta.texas_holdem.showdown_result": "%s won %s♦ with %s",
   "rule.charta.texas_holdem.starting_chips": "Starting Chips",
   "rule.charta.texas_holdem.starting_chips.description": "How many chips each player starts with.",
   "rule.charta.texas_holdem.big_blind": "Big Blind",
   "rule.charta.texas_holdem.big_blind.description": "The big blind bet amount.",
+  "rule.charta.texas_holdem.raise_multiplier": "Raise Multiplier",
 
   "message.charta.texas_holdem.pot": "Pot: %s",
   "message.charta.texas_holdem.preflop": "Pre-Flop",
@@ -477,7 +478,7 @@
   "message.charta.texas_holdem.raised": "Raised to %s",
   "message.charta.texas_holdem.all_in": "All-In! (%s)",
   "message.charta.texas_holdem.wins_pot": "Wins the pot of %s chips!",
-  "message.charta.texas_holdem.hand_name": "with %s",
+  "message.charta.texas_holdem.hand_name": "lose with %s",
   "message.charta.texas_holdem.chips_remaining": "Chips: %s",
   "message.charta.texas_holdem.posted_blind": "Posted blind: %s"
 

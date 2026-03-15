@@ -71,6 +71,11 @@ public abstract class AbstractCardMenu<G extends Game<G, M>, M extends AbstractC
         }
     };
 
+    @org.jetbrains.annotations.Nullable
+    public net.minecraft.core.BlockPos getBlockPos() {
+        return access.evaluate((level, pos) -> pos, null);
+    }
+
     public AbstractCardMenu(MenuType<?> menuType, int containerId, Inventory inventory, Definition definition) {
         super(menuType, containerId);
         this.inventory = inventory;
