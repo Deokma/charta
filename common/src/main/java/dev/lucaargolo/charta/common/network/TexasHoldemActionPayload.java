@@ -51,10 +51,13 @@ public record TexasHoldemActionPayload(int action) implements CustomPacketPayloa
             if (game.getCurrentPlayer() != cardPlayer) return;
 
             int action = payload.action();
-            if (action != TexasHoldemGame.ACTION_FOLD
-                    && action != TexasHoldemGame.ACTION_CALL
-                    && action != TexasHoldemGame.ACTION_RAISE_MIN
-                    && action != TexasHoldemGame.ACTION_ALL_IN) {
+            // Validate action — allow standard actions + any custom raise (200+)
+            boolean valid = action == TexasHoldemGame.ACTION_FOLD
+                    || action == TexasHoldemGame.ACTION_CALL
+                    || action == TexasHoldemGame.ACTION_RAISE_MIN
+                    || action == TexasHoldemGame.ACTION_ALL_IN
+                    || action >= TexasHoldemGame.ACTION_RAISE_CUSTOM;
+            if (!valid) {
                 ChartaMod.LOGGER.warn("TexasHoldemActionPayload: unknown action {} from {}",
                         action, player.getName().getString());
                 return;

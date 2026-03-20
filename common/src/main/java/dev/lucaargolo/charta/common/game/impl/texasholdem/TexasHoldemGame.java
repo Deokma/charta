@@ -27,10 +27,12 @@ import java.util.function.Predicate;
 public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
 
     // --- Action codes encoded in GamePlay.slot() ---
-    public static final int ACTION_FOLD      = 100;
-    public static final int ACTION_CALL      = 101;
-    public static final int ACTION_RAISE_MIN = 102;
-    public static final int ACTION_ALL_IN    = 103;
+    public static final int ACTION_FOLD         = 100;
+    public static final int ACTION_CALL         = 101;
+    public static final int ACTION_RAISE_MIN    = 102;
+    public static final int ACTION_ALL_IN       = 103;
+    /** Custom raise: amount encoded as (ACTION_RAISE_CUSTOM + chips), sent from client. */
+    public static final int ACTION_RAISE_CUSTOM = 200;
 
     // -------------------------------------------------------------------------
     // Game Options
@@ -58,11 +60,6 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
             Component.translatable("rule.charta.texas_holdem.big_blind"),
             Component.translatable("rule.charta.texas_holdem.big_blind.description"));
 
-    /** Raise = RAISE_MULTIPLIER_OPT × big blind. Values 1..5. */
-    private final GameOption.Number RAISE_MULTIPLIER_OPT = new GameOption.Number(
-            1, 1, 5,
-            Component.translatable("rule.charta.texas_holdem.raise_multiplier"),
-            Component.translatable("rule.charta.texas_holdem.raise_multiplier.description"));
 
     /** Returns actual starting chips (stored value × 100). */
     private int getStartingChips() {
@@ -79,9 +76,9 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
         return BIG_BLIND_OPT.get();
     }
 
-    /** Returns raise amount for one raise action (multiplier × big blind). */
+    /** Minimum raise = 1 big blind. */
     private int getRaiseAmount() {
-        return RAISE_MULTIPLIER_OPT.get() * getBigBlind();
+        return getBigBlind();
     }
 
     /** Public accessor for ContainerData sync. */
@@ -225,7 +222,7 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
 
     @Override
     public List<GameOption<?>> getOptions() {
-        return List.of(STARTING_CHIPS_OPT, BIG_BLIND_OPT, RAISE_MULTIPLIER_OPT);
+        return List.of(STARTING_CHIPS_OPT, BIG_BLIND_OPT);
     }
 
     @Override
@@ -247,11 +244,12 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
         if (idx < 0) return false;
 
         return switch (action) {
-            case ACTION_FOLD      -> !folded[idx];
-            case ACTION_CALL      -> !folded[idx] && !allIn[idx];
-            case ACTION_RAISE_MIN -> !folded[idx] && !allIn[idx] && chips[idx] > 0;
-            case ACTION_ALL_IN    -> !folded[idx] && !allIn[idx] && chips[idx] > 0;
-            default               -> false;
+            case ACTION_FOLD        -> !folded[idx];
+            case ACTION_CALL        -> !folded[idx] && !allIn[idx];
+            case ACTION_RAISE_MIN   -> !folded[idx] && !allIn[idx] && chips[idx] > 0;
+            case ACTION_ALL_IN      -> !folded[idx] && !allIn[idx] && chips[idx] > 0;
+            default                 -> action >= ACTION_RAISE_CUSTOM
+                    && !folded[idx] && !allIn[idx] && chips[idx] > 0;
         };
     }
 
@@ -351,10 +349,17 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
         }
         Collections.shuffle(drawPile);
 
+        // Mark bankrupt players as already folded so they are skipped in betting
+        for (int i = 0; i < n; i++) {
+            if (chips[i] == 0) folded[i] = true;
+        }
+
         // Schedule card dealing with small animation delays
+        // Skip players with 0 chips — they're eliminated and sit out
         for (int round = 0; round < 2; round++) {
             for (int i = 0; i < n; i++) {
                 final int pi = i;
+                if (chips[pi] == 0) continue; // bankrupt — no cards
                 scheduledActions.add(() -> {
                     CardPlayer p = players.get(pi);
                     p.playSound(ModSounds.CARD_DRAW.get());
@@ -509,8 +514,13 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
                 doRaise(playerIdx, player, chips[playerIdx]);
             }
             default -> {
-                // Unknown action: treat as fold
-                folded[playerIdx] = true;
+                if (action >= ACTION_RAISE_CUSTOM) {
+                    int raiseBy = Math.max(getMinRaise(), action - ACTION_RAISE_CUSTOM);
+                    doRaise(playerIdx, player, Math.min(raiseBy, chips[playerIdx]));
+                } else {
+                    // Unknown action: treat as fold
+                    folded[playerIdx] = true;
+                }
             }
         }
     }
@@ -853,7 +863,8 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
     private long countActivePlayers() {
         long count = 0;
         for (int i = 0; i < players.size(); i++) {
-            if (!folded[i]) count++;
+            // Player is active if not folded AND has chips (bankrupt = can't act)
+            if (!folded[i] && chips[i] > 0) count++;
         }
         return count;
     }

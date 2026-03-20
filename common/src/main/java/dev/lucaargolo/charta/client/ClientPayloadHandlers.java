@@ -116,9 +116,18 @@ public class ClientPayloadHandlers {
 
     public static void handleGameSlotReset(GameSlotResetPayload payload, Executor executor) {
         executor.execute(() -> {
+            net.minecraft.core.BlockPos pos = payload.pos();
+            // Clear poker chip overlays — this fires when any game ends/resets,
+            // so chips won't linger when a different game starts at the same table.
+            ChartaModClient.TABLE_POKER_CHIPS.remove(pos);
+            ChartaModClient.TABLE_POKER_GAME_SLOT_COUNT.remove(pos);
+            ChartaModClient.TABLE_POKER_FOLDED.remove(pos);
+            ChartaModClient.TABLE_POKER_ALLIN.remove(pos);
+            ChartaModClient.TABLE_POKER_STARTING_CHIPS.remove(pos);
+
             Level level = Minecraft.getInstance().level;
             if (level != null) {
-                level.getBlockEntity(payload.pos(), ModBlockEntityTypes.CARD_TABLE.get())
+                level.getBlockEntity(pos, ModBlockEntityTypes.CARD_TABLE.get())
                         .ifPresent(CardTableBlockEntity::resetSlots);
             }
         });

@@ -42,6 +42,10 @@ neoForge {
             client()
             gameDirectory = file("run/client2")
         }
+        client3 {
+            client()
+            gameDirectory = file("run/client3")
+        }
         data {
             data()
             programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/main/generated/').getAbsolutePath(), '--existing', resources.getAbsolutePath()

@@ -158,8 +158,11 @@ public class CardTableBlockEntityRenderer implements BlockEntityRenderer<CardTab
                 // (sideOffset, inwardOffset) for each stack in table units
                 final float[] SIDE_OFF   = { -11f,  11f,   0f };
                 final float[] INWARD_OFF = {   8f,   8f, -10f };
-                final int     MAX_DISCS  = 12;
-                final float   INWARD_DIST = 130f; // anchor distance from hand slot
+                final int     MAX_DISCS    = 12;
+                // Hand slots sit at ~-147.5 units outside the table edge.
+                // Inward vector points toward centre (table is 0..160).
+                // 160 units moves the anchor to ~+12 — just inside the border.
+                final float   INWARD_DIST  = 160f;
 
                 for (int pi = 0; pi < chips.length; pi++) {
                     int handSlotIndex = gameSlotCount + pi;

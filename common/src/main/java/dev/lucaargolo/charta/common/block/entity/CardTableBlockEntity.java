@@ -69,7 +69,7 @@ public class CardTableBlockEntity extends BlockEntity {
 
     @SuppressWarnings("unchecked")
     private static final Predicate<Vector2i>[] PREDICATES = new Predicate[] {
-        PY, PX_PY, PX, PX_NY, NY, NX_XY, NX, NX_PY
+            PY, PX_PY, PX, PX_NY, NY, NX_XY, NX, NX_PY
     };
 
     private final List<GameSlot> trackedSlots = new ArrayList<>();
@@ -134,6 +134,11 @@ public class CardTableBlockEntity extends BlockEntity {
                                         if(entity != null) {
                                             Vector3f offset = entity.position().subtract(worldPosition.getX() + 0.5, entity.getY(), worldPosition.getZ() + 0.5).toVector3f();
                                             Direction direction = GameChairBlock.getSeatedDirection(entity);
+                                            // Fallback for external chairs: derive direction from entity
+                                            // position relative to the table centre.
+                                            if(direction == null) {
+                                                direction = getDirectionFromPosition(entity);
+                                            }
                                             if(direction != null) {
                                                 float angle = switch (direction) {
                                                     case EAST -> 90;
@@ -289,16 +294,27 @@ public class CardTableBlockEntity extends BlockEntity {
                 }
                 for(BlockPos pos : chairs) {
                     BlockState chairState = this.level.getBlockState(pos);
-                    if(chairState.getBlock() instanceof GameChairBlock && set.contains(pos.relative(chairState.getValue(GameChairBlock.FACING)))) {
+
+                    if(chairState.getBlock() instanceof GameChairBlock
+                            && set.contains(pos.relative(chairState.getValue(GameChairBlock.FACING)))) {
+                        // Native Charta GameChairBlock — player rides a SeatEntity
                         if(SeatBlock.isSeatOccupied(this.level, pos)) {
                             List<SeatEntity> seats = level.getEntitiesOfClass(SeatEntity.class, new AABB(pos));
                             if(!seats.isEmpty()) {
                                 List<Entity> passengers = seats.getFirst().getPassengers();
-                                if(!passengers.isEmpty() && passengers.getFirst() instanceof LivingEntity entity) {
+                                if(!passengers.isEmpty() && passengers.getFirst() instanceof LivingEntity entity
+                                        && !players.contains(entity)) {
                                     players.add(entity);
                                 }
                             }
                         }
+                    } else if(!chairState.isAir()) {
+                        // External chair block (Handcrafted, Create Bits 'n' Bobs, etc.)
+                        // Only search non-air blocks to avoid false positives from neighbouring positions.
+                        AABB searchBox = new AABB(pos).inflate(0.3);
+                        List<LivingEntity> nearby = level.getEntitiesOfClass(LivingEntity.class, searchBox,
+                                e -> e.isPassenger() && !players.contains(e));
+                        players.addAll(nearby);
                     }
                 }
             }
@@ -381,9 +397,29 @@ public class CardTableBlockEntity extends BlockEntity {
             Game<?, ?> game = blockEntity.game;
             if(!game.isGameOver()) {
                 if (blockEntity.age++ % 100 == 0 || blockEntity.playersDirty) {
-                    List<CardPlayer> players = blockEntity.getOrderedPlayers();
-                    if (!players.containsAll(game.getPlayers())) {
-                        game.endGame();
+                    List<CardPlayer> currentPlayers = blockEntity.getOrderedPlayers();
+                    if (!currentPlayers.containsAll(game.getPlayers())) {
+                        boolean shouldEnd = true;
+                        if (game instanceof dev.lucaargolo.charta.common.game.impl.texasholdem.TexasHoldemGame thGame) {
+                            List<dev.lucaargolo.charta.common.game.api.CardPlayer> gamePlayers = game.getPlayers();
+                            // Count players still seated AND with chips
+                            int remainingWithChips = 0;
+                            for (int i = 0; i < gamePlayers.size(); i++) {
+                                if (currentPlayers.contains(gamePlayers.get(i)) && thGame.chips[i] > 0) {
+                                    remainingWithChips++;
+                                }
+                            }
+                            if (remainingWithChips >= 2) {
+                                // Fold players who left so they are skipped in betting
+                                for (int i = 0; i < gamePlayers.size(); i++) {
+                                    if (!currentPlayers.contains(gamePlayers.get(i))) {
+                                        thGame.folded[i] = true;
+                                    }
+                                }
+                                shouldEnd = false;
+                            }
+                        }
+                        if (shouldEnd) game.endGame();
                     }
                     blockEntity.playersDirty = false;
                 }
@@ -405,6 +441,24 @@ public class CardTableBlockEntity extends BlockEntity {
             }
         }
         return quadrant;
+    }
+
+    /**
+     * Determines which direction a player is facing toward the table based purely on
+     * their position relative to the table block. Used for external chairs (Handcrafted,
+     * Create Bits 'n' Bobs, etc.) that don't use GameChairBlock.
+     *
+     * The direction returned is the one the chair "faces" — i.e., toward the table.
+     * A player sitting SOUTH of the table faces NORTH.
+     */
+    private Direction getDirectionFromPosition(LivingEntity entity) {
+        double dx = entity.getX() - (worldPosition.getX() + 0.5);
+        double dz = entity.getZ() - (worldPosition.getZ() + 0.5);
+        if(Math.abs(dx) > Math.abs(dz)) {
+            return dx > 0 ? Direction.WEST : Direction.EAST;
+        } else {
+            return dz > 0 ? Direction.NORTH : Direction.SOUTH;
+        }
     }
 
 }
