@@ -25,14 +25,23 @@ public abstract class ModPacketManager {
         register(PacketInfo.PLAY_TO_SERVER, CardContainerSlotClickPayload.class);
         register(PacketInfo.PLAY_TO_SERVER, CardTableSelectGamePayload.class);
         register(PacketInfo.PLAY_TO_SERVER, RestoreSolitairePayload.class);
-        register(PacketInfo.PLAY_TO_SERVER, TexasHoldemActionPayload.class);
 
         register(PacketInfo.PLAY_TO_BOTH, LastFunPayload.class);
         register(PacketInfo.PLAY_TO_BOTH, PlayerOptionsPayload.class);
         register(PacketInfo.PLAY_TO_BOTH, GameLeavePayload.class);
+        register(PacketInfo.PLAY_TO_SERVER, TexasHoldemActionPayload.class);
     }
 
     protected abstract <T extends CustomPacketPayload> void register(PacketInfo info, Class<T> klass);
+
+    /**
+     * Register a client-side payload handler. Called from client init only.
+     * Default no-op — overridden by platform implementations that need it.
+     */
+    public <T extends CustomPacketPayload> void registerClientHandler(Class<T> payloadClass,
+                                                                      java.util.function.BiConsumer<T, java.util.concurrent.Executor> handler) {
+        // no-op by default (e.g. Fabric handles this differently)
+    }
 
     public abstract void sendToServer(CustomPacketPayload payload);
 

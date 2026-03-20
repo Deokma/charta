@@ -18,12 +18,27 @@ import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executor;
+import java.util.function.BiConsumer;
 
 public class NeoForgeModPacketManager extends ModPacketManager {
 
     private final List<Pair<PacketInfo, Class<? extends CustomPacketPayload>>> payloadsToRegister = new ArrayList<>();
+
+    /**
+     * Client-side handlers registered by ClientPayloadHandlers.register() during client init.
+     * Never populated on a dedicated server — the key is the payload Class, value is the handler.
+     * Using Object keys so this class has zero client-class imports.
+     */
+    private final Map<Class<?>, BiConsumer<Object, Executor>> clientHandlers = new HashMap<>();
+
+    @SuppressWarnings("unchecked")
+    public <T extends CustomPacketPayload> void registerClientHandler(Class<T> payloadClass, BiConsumer<T, Executor> handler) {
+        clientHandlers.put(payloadClass, (BiConsumer<Object, Executor>) (BiConsumer<?, ?>) handler);
+    }
 
     @Override
     public void init() {
@@ -41,48 +56,48 @@ public class NeoForgeModPacketManager extends ModPacketManager {
             try {
                 CustomPacketPayload.Type payloadType = (CustomPacketPayload.Type) payloadClass.getField("TYPE").get(null);
                 StreamCodec payloadCodec = (StreamCodec) payloadClass.getField("STREAM_CODEC").get(null);
-                Lazy<Method> clientHandler = Lazy.of(() -> {
-                    try {
-                        return payloadClass.getMethod("handleClient", payloadClass, Executor.class);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                });
+
+                // Server handler resolved via reflection — safe (no client imports in server handlers)
                 Lazy<Method> serverHandler = Lazy.of(() -> {
                     try {
                         return payloadClass.getMethod("handleServer", payloadClass, ServerPlayer.class, Executor.class);
+                    } catch (NoSuchMethodException e) {
+                        return null; // payload has no server handler
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
                 });
+
                 switch (info) {
                     case PLAY_TO_CLIENT -> registrar.playToClient(payloadType, payloadCodec, (payload, context) -> {
-                        try {
-                            clientHandler.get().invoke(null, payload, (Executor) context::enqueueWork);
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
+                        BiConsumer<Object, Executor> handler = clientHandlers.get(payloadClass);
+                        if (handler != null) {
+                            handler.accept(payload, context::enqueueWork);
                         }
                     });
                     case PLAY_TO_SERVER -> registrar.playToServer(payloadType, payloadCodec, (payload, context) -> {
                         try {
-                            serverHandler.get().invoke(null, payload, context.player(), (Executor) context::enqueueWork);
+                            Method m = serverHandler.get();
+                            if (m != null) m.invoke(null, payload, context.player(), (Executor) context::enqueueWork);
                         } catch (Exception e) {
                             throw new RuntimeException(e);
                         }
                     });
                     case PLAY_TO_BOTH -> registrar.playBidirectional(payloadType, payloadCodec, (payload, context) -> {
                         try {
-                            if(context.flow().isClientbound()) {
-                                clientHandler.get().invoke(null, payload, (Executor) context::enqueueWork);
-                            }else{
-                                serverHandler.get().invoke(null, payload, context.player(), (Executor) context::enqueueWork);
+                            if (context.flow().isClientbound()) {
+                                BiConsumer<Object, Executor> handler = clientHandlers.get(payloadClass);
+                                if (handler != null) handler.accept(payload, context::enqueueWork);
+                            } else {
+                                Method m = serverHandler.get();
+                                if (m != null) m.invoke(null, payload, context.player(), (Executor) context::enqueueWork);
                             }
                         } catch (Exception e) {
                             throw new RuntimeException(e);
                         }
                     });
                 }
-            }catch (Exception e) {
+            } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         });
@@ -132,5 +147,4 @@ public class NeoForgeModPacketManager extends ModPacketManager {
     public void sendToPlayersTrackingChunk(ServerLevel level, ChunkPos chunkPos, CustomPacketPayload payload) {
         PacketDistributor.sendToPlayersTrackingChunk(level, chunkPos, payload);
     }
-
 }

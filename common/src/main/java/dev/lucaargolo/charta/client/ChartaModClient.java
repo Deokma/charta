@@ -79,6 +79,29 @@ public abstract class ChartaModClient {
     protected final void init() {
         this.shaderManager.init();
 
+        // Wire up DeckItem screen — must be done client-side to avoid loading Screen on servers
+        dev.lucaargolo.charta.common.item.DeckItem.SCREEN_OPENER = deck -> {
+            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+            mc.setScreen(new dev.lucaargolo.charta.client.render.screen.DeckScreen(null, deck));
+        };
+
+        // Register all client-side packet handlers.
+        // These must live here (client package) so server never loads Minecraft/LocalPlayer classes.
+        dev.lucaargolo.charta.common.network.ModPacketManager pm = ChartaMod.getPacketManager();
+        pm.registerClientHandler(dev.lucaargolo.charta.common.network.CardDecksPayload.class,                  ClientPayloadHandlers::handleCardDecks);
+        pm.registerClientHandler(dev.lucaargolo.charta.common.network.GameStartPayload.class,                  ClientPayloadHandlers::handleGameStart);
+        pm.registerClientHandler(dev.lucaargolo.charta.common.network.ImagesPayload.class,                     ClientPayloadHandlers::handleImages);
+        pm.registerClientHandler(dev.lucaargolo.charta.common.network.PlayerOptionsPayload.class,              ClientPayloadHandlers::handlePlayerOptions);
+        pm.registerClientHandler(dev.lucaargolo.charta.common.network.CardPlayPayload.class,                   ClientPayloadHandlers::handleCardPlay);
+        pm.registerClientHandler(dev.lucaargolo.charta.common.network.GameLeavePayload.class,                  ClientPayloadHandlers::handleGameLeave);
+        pm.registerClientHandler(dev.lucaargolo.charta.common.network.GameSlotCompletePayload.class,           ClientPayloadHandlers::handleGameSlotComplete);
+        pm.registerClientHandler(dev.lucaargolo.charta.common.network.GameSlotPositionPayload.class,           ClientPayloadHandlers::handleGameSlotPosition);
+        pm.registerClientHandler(dev.lucaargolo.charta.common.network.GameSlotResetPayload.class,              ClientPayloadHandlers::handleGameSlotReset);
+        pm.registerClientHandler(dev.lucaargolo.charta.common.network.LastFunPayload.class,                    ClientPayloadHandlers::handleLastFun);
+        pm.registerClientHandler(dev.lucaargolo.charta.common.network.TableScreenPayload.class,                ClientPayloadHandlers::handleTableScreen);
+        pm.registerClientHandler(dev.lucaargolo.charta.common.network.UpdateCardContainerCarriedPayload.class, ClientPayloadHandlers::handleUpdateCarried);
+        pm.registerClientHandler(dev.lucaargolo.charta.common.network.UpdateCardContainerSlotPayload.class,    ClientPayloadHandlers::handleUpdateSlot);
+
         this.registerEntityRenderer(ModEntityTypes.SEAT, NoopRenderer::new);
         this.registerEntityRenderer(ModEntityTypes.IRON_LEASH_KNOT, IronLeashKnotRenderer::new);
 

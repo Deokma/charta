@@ -1,11 +1,9 @@
 package dev.lucaargolo.charta.common.item;
 
-import dev.lucaargolo.charta.client.render.screen.DeckScreen;
 import dev.lucaargolo.charta.common.ChartaMod;
 import dev.lucaargolo.charta.common.data.ModDataComponentTypes;
 import dev.lucaargolo.charta.common.game.api.card.Deck;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -21,8 +19,15 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public class DeckItem extends Item {
+
+    /**
+     * Set by ChartaModClient.init() on the client side.
+     * Null on dedicated servers — never called there because use() checks isClientSide().
+     */
+    public static Consumer<Deck> SCREEN_OPENER = null;
 
     public DeckItem(Properties properties) {
         super(properties);
@@ -37,24 +42,20 @@ public class DeckItem extends Item {
     @Override
     public @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand usedHand) {
         ItemStack stack = player.getItemInHand(usedHand);
-        if(level.isClientSide()) {
+        if (level.isClientSide()) {
             Deck deck = getDeck(stack);
-            if(deck != null)
-                openScreen(deck);
+            if (deck != null && SCREEN_OPENER != null) {
+                SCREEN_OPENER.accept(deck);
+            }
         }
         return InteractionResultHolder.success(stack);
-    }
-
-    private static void openScreen(Deck deck) {
-        Minecraft minecraft = Minecraft.getInstance();
-        minecraft.setScreen(new DeckScreen(null, deck));
     }
 
     @Override
     public void appendHoverText(@NotNull ItemStack stack, @NotNull TooltipContext context, @NotNull List<Component> tooltipComponents, @NotNull TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
         Deck deck = getDeck(stack);
-        if(deck != null) {
+        if (deck != null) {
             tooltipComponents.add(Component.literal(String.valueOf(deck.getCards().size())).append(" ").append(Component.translatable("charta.cards")).withStyle(ChatFormatting.DARK_PURPLE));
         }
     }
@@ -67,12 +68,12 @@ public class DeckItem extends Item {
 
     public static ItemStack getDeck(Deck deck) {
         ResourceLocation deckId = ChartaMod.CARD_DECKS.getDecks()
-            .entrySet()
-            .stream()
-            .filter(e -> e.getValue() == deck)
-            .map(Map.Entry::getKey)
-            .findFirst()
-            .orElse(ChartaMod.id("missing"));
+                .entrySet()
+                .stream()
+                .filter(e -> e.getValue() == deck)
+                .map(Map.Entry::getKey)
+                .findFirst()
+                .orElse(ChartaMod.id("missing"));
         return getDeck(deckId);
     }
 
