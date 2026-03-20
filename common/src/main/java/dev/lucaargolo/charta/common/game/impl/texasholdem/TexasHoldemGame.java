@@ -47,34 +47,11 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
     //   1 = raise by 1×BB, 5 = raise by 5×BB.
     // -------------------------------------------------------------------------
 
-    /** Chips option that shows actual value (×100) in the slider label. */
+    /** Chips option — displayMultiplier=100 so the client widget shows "Starting Chips: 1000" instead of "10". */
     private final GameOption.Number STARTING_CHIPS_OPT = new GameOption.Number(
-            5, 1, 20,
+            5, 1, 20, 100,
             Component.translatable("rule.charta.texas_holdem.starting_chips"),
-            Component.translatable("rule.charta.texas_holdem.starting_chips.description")) {
-        @Override
-        public Widget getWidget(java.util.function.Consumer<Integer> consumer,
-                                net.minecraft.client.gui.Font font,
-                                int width, int height, boolean showcase) {
-            // Show "Starting Chips: 1000" instead of "Starting Chips: 10"
-            java.util.function.Function<Integer, net.minecraft.network.chat.Component> msg =
-                    i -> this.getTitle().copy().append(": ").append(Integer.toString(i * 100));
-            double initPos = (20 > 1) ? (double)(this.get() - 1) / (20 - 1) : 0.0;
-            net.minecraft.client.gui.components.AbstractSliderButton slider =
-                    new net.minecraft.client.gui.components.AbstractSliderButton(
-                            0, 0, width, height, msg.apply(this.get()), initPos) {
-                        @Override protected void updateMessage() { this.setMessage(msg.apply(STARTING_CHIPS_OPT.get())); }
-                        @Override protected void applyValue()    { STARTING_CHIPS_OPT.set(net.minecraft.util.Mth.clamp(net.minecraft.util.Mth.floor(net.minecraft.util.Mth.lerp(this.value, 1, 20)), 1, 20)); }
-                        @Override protected void renderScrollingString(@org.jetbrains.annotations.NotNull net.minecraft.client.gui.GuiGraphics g,
-                                                                       @org.jetbrains.annotations.NotNull net.minecraft.client.gui.Font f, int w, int c) {
-                            super.renderScrollingString(g, f, w, 16777215 | net.minecraft.util.Mth.ceil(this.alpha * 255.0F) << 24);
-                        }
-                    };
-            slider.setTooltip(net.minecraft.client.gui.components.Tooltip.create(this.getDescription()));
-            slider.active = !showcase;
-            return new Widget(slider);
-        }
-    };
+            Component.translatable("rule.charta.texas_holdem.starting_chips.description"));
 
     private final GameOption.Number BIG_BLIND_OPT = new GameOption.Number(
             10, 2, 50,

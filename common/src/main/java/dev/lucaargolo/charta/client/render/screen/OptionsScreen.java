@@ -1,6 +1,7 @@
 package dev.lucaargolo.charta.client.render.screen;
 
 import dev.lucaargolo.charta.client.ChartaModClient;
+import dev.lucaargolo.charta.client.game.GameOptionWidgets;
 import dev.lucaargolo.charta.common.ChartaMod;
 import dev.lucaargolo.charta.common.game.api.card.Deck;
 import dev.lucaargolo.charta.common.game.api.game.Game;
@@ -51,7 +52,7 @@ public class OptionsScreen<G extends Game<G, M>, M extends AbstractCardMenu<G, M
         this.gameType = gameType;
         this.showcase = showcase;
 
-        if(!showcase) {
+        if (!showcase) {
             Optional.ofNullable(ChartaModClient.LOCAL_OPTIONS.get(this.gameId)).ifPresent(game::setRawOptions);
         }
     }
@@ -60,9 +61,15 @@ public class OptionsScreen<G extends Game<G, M>, M extends AbstractCardMenu<G, M
     protected void init() {
         this.widget = this.addRenderableWidget(new OptionsWidget(minecraft, width, height - 60, 30));
 
-        for(int i = 0; i < this.game.getOptions().size(); i++) {
+        for (int i = 0; i < this.game.getOptions().size(); i++) {
             GameOption<?> option = this.game.getOptions().get(i);
-            widget.addEntry(option.getWidget(o -> updateButtons(false), font, widget.getRowWidth(), 20, showcase));
+            @SuppressWarnings("unchecked")
+            GameOptionWidgets.Widget w = GameOptionWidgets.createWidget(
+                    option,
+                    o -> updateButtons(false),
+                    font, widget.getRowWidth(), 20, showcase
+            );
+            widget.addEntry(w);
         }
 
         Component back = Component.literal("\ue5c4").withStyle(ChartaMod.SYMBOLS);
@@ -72,28 +79,28 @@ public class OptionsScreen<G extends Game<G, M>, M extends AbstractCardMenu<G, M
                 .build()
         );
 
-        if(!showcase) {
+        if (!showcase) {
             this.resetButton = this.addRenderableWidget(Button.builder(Component.translatable("button.charta.reset"), b -> {
                 boolean reset = GameType.areOptionsChanged(gameType, game);
-                if(reset) {
+                if (reset) {
                     G defaultGame = gameType.create(List.of(), Deck.EMPTY);
                     this.game.setRawOptions(defaultGame.getRawOptions());
                 }
                 this.updateButtons(false);
-            }).bounds(width/2 - 108, height-25, 68, 20).tooltip(Tooltip.create(Component.translatable("message.charta.reset_options"))).build());
+            }).bounds(width / 2 - 108, height - 25, 68, 20).tooltip(Tooltip.create(Component.translatable("message.charta.reset_options"))).build());
             this.resetButton.active = GameType.areOptionsChanged(gameType, game);
 
             this.saveButton = this.addRenderableWidget(Button.builder(Component.translatable("button.charta.save"), b -> {
                 this.updateButtons(true);
                 ChartaModClient.LOCAL_OPTIONS.put(gameId, this.game.getRawOptions());
                 ChartaMod.getPacketManager().sendToServer(new PlayerOptionsPayload(ChartaModClient.LOCAL_OPTIONS));
-            }).bounds(width/2 - 32, height-25, 68, 20).tooltip(Tooltip.create(Component.translatable("message.charta.save_options"))).build());
+            }).bounds(width / 2 - 32, height - 25, 68, 20).tooltip(Tooltip.create(Component.translatable("message.charta.save_options"))).build());
             this.saveButton.active = false;
 
             this.addRenderableWidget(Button.builder(Component.translatable("button.charta.start"), b -> {
                 ChartaMod.getPacketManager().sendToServer(new CardTableSelectGamePayload(pos, gameId, this.game.getRawOptions()));
                 onClose();
-            }).bounds(width/2 + 44, height-25, 68, 20).tooltip(Tooltip.create(Component.translatable("message.charta.start_options"))).build());
+            }).bounds(width / 2 + 44, height - 25, 68, 20).tooltip(Tooltip.create(Component.translatable("message.charta.start_options"))).build());
         }
 
         updateButtons(true);
@@ -102,33 +109,33 @@ public class OptionsScreen<G extends Game<G, M>, M extends AbstractCardMenu<G, M
     public void updateButtons(boolean saved) {
         boolean reset = false;
         G defaultGame = gameType.create(List.of(), Deck.EMPTY);
-        for(int i = 0; i < defaultGame.getOptions().size(); i++) {
+        for (int i = 0; i < defaultGame.getOptions().size(); i++) {
             GameOption<?> defaultOption = defaultGame.getOptions().get(i);
             GameOption<?> modifiedOption = game.getOptions().get(i);
-            GameOption.Widget entry = this.widget.getEntry(i);
+            GameOptionWidgets.Widget entry = this.widget.getEntry(i);
             entry.setTooltip(new CustomOptionTooltip(entry.getTooltip(), defaultOption.get().toString(), modifiedOption.get().toString()));
-            if(modifiedOption.getValue() != defaultOption.getValue()) {
+            if (modifiedOption.getValue() != defaultOption.getValue()) {
                 this.widget.changed.set(i, true);
                 reset = true;
-            }else{
+            } else {
                 this.widget.changed.set(i, false);
             }
         }
-        if(this.resetButton != null)
+        if (this.resetButton != null)
             this.resetButton.active = reset;
-        if(this.saveButton != null)
+        if (this.saveButton != null)
             this.saveButton.active = !saved;
     }
 
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
-        guiGraphics.drawCenteredString(font, title, width/2, 10, 0xFFFFFFFF);
+        guiGraphics.drawCenteredString(font, title, width / 2, 10, 0xFFFFFFFF);
     }
 
     @Override
     public void onClose() {
-        if(this.minecraft != null) {
+        if (this.minecraft != null) {
             this.minecraft.setScreen(this.parent);
         }
     }
@@ -138,7 +145,7 @@ public class OptionsScreen<G extends Game<G, M>, M extends AbstractCardMenu<G, M
         return false;
     }
 
-    public static class OptionsWidget extends ContainerObjectSelectionList<GameOption.Widget> {
+    public static class OptionsWidget extends ContainerObjectSelectionList<GameOptionWidgets.Widget> {
 
         protected final BooleanList changed = new BooleanArrayList();
 
@@ -147,21 +154,23 @@ public class OptionsScreen<G extends Game<G, M>, M extends AbstractCardMenu<G, M
         }
 
         @Override
-        protected void renderItem(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick, int index, int left, int top, int width, int height) {
+        protected void renderItem(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick,
+                                  int index, int left, int top, int width, int height) {
             super.renderItem(guiGraphics, mouseX, mouseY, partialTick, index, left, top, width, height);
-            if(changed.getBoolean(index)) {
-                guiGraphics.drawString(minecraft.font, "!", left + width - 4, top + 2, (Util.getMillis() / 1000) % 2 == 0 ? 0xFF0000 : 0xFFFF00);
+            if (changed.getBoolean(index)) {
+                guiGraphics.drawString(minecraft.font, "!", left + width - 4, top + 2,
+                        (Util.getMillis() / 1000) % 2 == 0 ? 0xFF0000 : 0xFFFF00);
             }
         }
 
         @Override
-        public int addEntry(@NotNull GameOption.Widget entry) {
+        public int addEntry(@NotNull GameOptionWidgets.Widget entry) {
             changed.add(false);
             return super.addEntry(entry);
         }
 
         @Override
-        public GameOption.@NotNull Widget getEntry(int index) {
+        public GameOptionWidgets.@NotNull Widget getEntry(int index) {
             return super.getEntry(index);
         }
     }

@@ -1,16 +1,12 @@
 package dev.lucaargolo.charta.common.network;
 
-import dev.lucaargolo.charta.client.render.screen.TableScreen;
 import dev.lucaargolo.charta.common.ChartaMod;
 import dev.lucaargolo.charta.common.game.api.card.Deck;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.concurrent.Executor;
 
 public record TableScreenPayload(BlockPos pos, Deck deck, int[] players) implements CustomPacketPayload {
 
@@ -43,12 +39,6 @@ public record TableScreenPayload(BlockPos pos, Deck deck, int[] players) impleme
             TableScreenPayload::players,
             TableScreenPayload::new
     );
-
-    public static void handleClient(TableScreenPayload payload, Executor executor) {
-        executor.execute(() -> {
-            Minecraft.getInstance().setScreen(new TableScreen(payload.pos, payload.deck, payload.players));
-        });
-    }
 
     @Override
     public @NotNull Type<? extends CustomPacketPayload> type() {

@@ -1,6 +1,5 @@
 package dev.lucaargolo.charta.common.network;
 
-import dev.lucaargolo.charta.client.ChartaModClient;
 import dev.lucaargolo.charta.common.ChartaMod;
 import dev.lucaargolo.charta.common.utils.CardImage;
 import dev.lucaargolo.charta.common.utils.CardImageUtils;
@@ -13,7 +12,6 @@ import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
-import java.util.concurrent.Executor;
 
 public record ImagesPayload(HashMap<ResourceLocation, SuitImage> suitImages, HashMap<ResourceLocation, CardImage> cardImages, HashMap<ResourceLocation, CardImage> deckImages) implements CustomPacketPayload {
 
@@ -28,16 +26,6 @@ public record ImagesPayload(HashMap<ResourceLocation, SuitImage> suitImages, Has
         ImagesPayload::deckImages,
         ImagesPayload::new
     );
-
-    public static void handleClient(ImagesPayload payload, Executor executor) {
-        executor.execute(() -> {
-            ChartaModClient.clearImages();
-            ChartaMod.SUIT_IMAGES.setImages(payload.suitImages());
-            ChartaMod.CARD_IMAGES.setImages(payload.cardImages());
-            ChartaMod.DECK_IMAGES.setImages(payload.deckImages());
-            ChartaModClient.generateImages();
-        });
-    }
 
     @Override
     public @NotNull Type<? extends CustomPacketPayload> type() {

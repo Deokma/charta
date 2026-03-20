@@ -1,6 +1,5 @@
 package dev.lucaargolo.charta.common.network;
 
-import dev.lucaargolo.charta.client.ChartaModClient;
 import dev.lucaargolo.charta.common.ChartaMod;
 import dev.lucaargolo.charta.common.utils.PlayerOptionData;
 import io.netty.buffer.ByteBuf;
@@ -23,13 +22,6 @@ public record PlayerOptionsPayload(HashMap<ResourceLocation, byte[]> playerOptio
             PlayerOptionsPayload::playerOptions,
             PlayerOptionsPayload::new
     );
-
-    public static void handleClient(PlayerOptionsPayload payload, Executor executor) {
-        executor.execute(() -> {
-            ChartaModClient.LOCAL_OPTIONS.clear();
-            ChartaModClient.LOCAL_OPTIONS.putAll(payload.playerOptions);
-        });
-    }
 
     public static void handleServer(PlayerOptionsPayload payload, ServerPlayer player, Executor executor) {
         executor.execute(() -> {
