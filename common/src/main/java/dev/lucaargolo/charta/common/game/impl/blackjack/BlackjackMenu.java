@@ -31,7 +31,8 @@ public class BlackjackMenu extends AbstractCardMenu<BlackjackGame, BlackjackMenu
     private static final int OFF_BUSTED     = MAX_P * 2 + 1;
     private static final int OFF_PHASE      = MAX_P * 2 + 2;
     private static final int OFF_DEALER_VAL = MAX_P * 2 + 3;
-    private static final int DATA_COUNT     = MAX_P * 2 + 4;
+    private static final int OFF_DEALER_VIS = MAX_P * 2 + 4; // value of face-up dealer cards only
+    private static final int DATA_COUNT     = MAX_P * 2 + 5;
 
     private final ContainerData data = new ContainerData() {
         @Override public int get(int index) {
@@ -43,6 +44,12 @@ public class BlackjackMenu extends AbstractCardMenu<BlackjackGame, BlackjackMenu
             if (index == OFF_BUSTED)    { int m=0; for(int i=0;i<n;i++) if(g.busted[i]) m|=(1<<i); return m; }
             if (index == OFF_PHASE)     return g.phaseOrdinal;
             if (index == OFF_DEALER_VAL)return g.getDealerValue();
+            if (index == OFF_DEALER_VIS){
+                // Sum only face-up cards (not flipped)
+                java.util.LinkedList<dev.lucaargolo.charta.common.game.api.card.Card> visible = new java.util.LinkedList<>();
+                for (var s : g.dealerSlots) s.stream().filter(c -> !c.flipped()).forEach(visible::add);
+                return BlackjackGame.handValue(new dev.lucaargolo.charta.common.game.api.GameSlot(visible,0,0,0,0));
+            }
             return 0;
         }
         @Override public void set(int index, int value) {
@@ -56,6 +63,12 @@ public class BlackjackMenu extends AbstractCardMenu<BlackjackGame, BlackjackMenu
         }
         @Override public int getCount() { return DATA_COUNT; }
     };
+
+    /** Index of the first dealer CardSlot in menu.cardSlots */
+    public final int dealerSlotStart;
+    public static final float DEALER_CARD_W   = 27f;
+    public static final float DEALER_CARD_GAP = 6f;
+    public static final float DEALER_Y        = 70f;
 
     public BlackjackMenu(int containerId, Inventory inventory, Definition definition) {
         super(ModMenuTypes.BLACKJACK.get(), containerId, inventory, definition);
@@ -76,13 +89,14 @@ public class BlackjackMenu extends AbstractCardMenu<BlackjackGame, BlackjackMenu
         }
 
         // Dealer card slots — each slot is individually registered in the game and synced to client
+        dealerSlotStart = this.cardSlots.size();
         {
-            float cardW  = 25f;
-            float gap    = 8f;
+            float cardW  = DEALER_CARD_W;
+            float gap    = DEALER_CARD_GAP;
             int   n      = BlackjackGame.MAX_DEALER_CARDS;
             float totalW = n * cardW + (n - 1) * gap;
             float startX = (256f - totalW) / 2f;
-            float dealerY = 70f;
+            float dealerY = DEALER_Y;
             for (int di = 0; di < n; di++) {
                 final int idx = di;
                 addCardSlot(new CardSlot<>(this.game, g -> g.dealerSlots[idx],
@@ -102,10 +116,15 @@ public class BlackjackMenu extends AbstractCardMenu<BlackjackGame, BlackjackMenu
     // ── Accessors for screen ──────────────────────────────────────────────────
     public int getChips(int i)   { return i < game.chips.length  ? data.get(OFF_CHIPS + i) : 0; }
     public int getBet(int i)     { return i < game.bets.length   ? data.get(OFF_BETS  + i) : 0; }
+    /** True if this player has left the table (bankrupt sentinel bets[i]==-1 AND chips==0). */
+    public boolean isPlayerLeft(int i) { return getChips(i) == 0 && getBet(i) < 0; }
     public boolean isStood(int i){ return (data.get(OFF_STOOD)  & (1 << i)) != 0; }
     public boolean isBusted(int i){ return (data.get(OFF_BUSTED) & (1 << i)) != 0; }
     public BlackjackGame.Phase getPhase() { return BlackjackGame.Phase.values()[data.get(OFF_PHASE)]; }
     public int getDealerValue()  { return data.get(OFF_DEALER_VAL); }
+    public int getDealerVisibleValue() { return data.get(OFF_DEALER_VIS); }
+    /** True only during PLAYING phase — dealer has one hidden hole card */
+    public boolean dealerHasHoleCard() { return getPhase() == BlackjackGame.Phase.PLAYING; }
     public int getMyBet()        { int idx = game.getPlayers().indexOf(getCardPlayer()); return idx>=0 ? getBet(idx) : 0; }
     public int getMyChips()      { int idx = game.getPlayers().indexOf(getCardPlayer()); return idx>=0 ? getChips(idx) : 0; }
     public int getHandValue()    {

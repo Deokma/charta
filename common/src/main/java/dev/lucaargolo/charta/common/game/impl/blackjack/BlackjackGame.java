@@ -130,7 +130,7 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
     @Override
     public void startGame() {
         int n = players.size();
-        Arrays.fill(bets,   0);
+        Arrays.fill(bets,   0); // 0 = no bet yet; -1 = bankrupt skip (set in startBettingRound)
         Arrays.fill(stood,  false);
         Arrays.fill(busted, false);
         for (GameSlot s : dealerSlots) s.clear();
@@ -174,11 +174,30 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
     // Bets arrive via canPlay/handleBet called from BlackjackActionPayload.
     // runGame() just checks if all bets are in and deals if so.
     private void startBettingRound() {
-        // Tell all players it's betting time — everyone can bet simultaneously
+        // Auto-skip bankrupt players (chips == 0) — they can't bet
+        for (int i = 0; i < players.size(); i++) {
+            if (chips[i] == 0 && bets[i] == 0) {
+                bets[i] = -1; // sentinel: skip this player
+            }
+        }
+        // Count active (non-bankrupt) players
+        int active = 0;
+        for (int i = 0; i < players.size(); i++) if (chips[i] > 0) active++;
+        if (active == 0) { endGame(); return; }
+
         table(Component.translatable("message.charta.blackjack.place_bets"));
-        // currentPlayer = null means "everyone can act" — we check per-player in canPlay
         currentPlayer = null;
-        // Stay ready so canPlay works and screen shows buttons
+        // Check if all active players already have bets (edge case on rejoin)
+        checkAllBetsPlaced();
+    }
+
+    private void checkAllBetsPlaced() {
+        for (int i = 0; i < players.size(); i++) {
+            if (chips[i] > 0 && bets[i] == 0) return; // still waiting
+        }
+        // All active players have bet → deal
+        isGameReady = false;
+        scheduledActions.add(this::dealInitialCards);
     }
 
     /** Called by handleBet when a player submits their bet. */
@@ -190,14 +209,8 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
         chips[playerIdx] -= actual;
         play(players.get(playerIdx), Component.translatable("message.charta.blackjack.bet_placed", actual));
 
-        // Check if ALL players have bet
-        boolean allBet = true;
-        for (int b : bets) if (b == 0) { allBet = false; break; }
-        if (allBet) {
-            isGameReady = false;
-            // Deal cards via scheduledActions
-            scheduledActions.add(this::dealInitialCards);
-        }
+        // Check if all ACTIVE players have bet (skip bankrupt)
+        checkAllBetsPlaced();
     }
 
     // ─── Deal initial cards ────────────────────────────────────────────────────
@@ -206,12 +219,13 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
         // Round 2: all players get 1 face-up card, dealer gets 1 face-DOWN
         for (int round = 0; round < 2; round++) {
             for (int i = 0; i < players.size(); i++) {
+                if (bets[i] < 0) continue; // bankrupt — skip deal
                 final int pi = i;
                 scheduledActions.add(() -> {
                     players.get(pi).playSound(ModSounds.CARD_DRAW.get());
                     dealFaceUp(players.get(pi), 1);
                 });
-                scheduledActions.add(() -> {});
+                for (int _d=0;_d<8;_d++) scheduledActions.add(() -> {});
             }
             final boolean faceDown = (round == 1);
             scheduledActions.add(() -> {
@@ -250,21 +264,24 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
     }
 
     // ─── PLAYING: players take turns ─────────────────────────────────────────
+    // Which player indices have already been sent the "you left" title
+    public final java.util.Set<Integer> notifiedLeavers = new java.util.HashSet<>();
     // Guard so startPlayingRound only runs once per turn (runGame() must not re-enter)
     private boolean waitingForPlayAction = false;
 
     private void startPlayingRound() {
         if (waitingForPlayAction) return; // already waiting, don't re-register
 
-        // Skip players who are stood or busted
+        // Skip players who are stood, busted, or bankrupt (bets < 0)
         while (activePlayerIndex < players.size()
-                && (stood[activePlayerIndex] || busted[activePlayerIndex])) {
+                && (stood[activePlayerIndex] || busted[activePlayerIndex] || bets[activePlayerIndex] < 0)) {
             activePlayerIndex++;
         }
 
         if (activePlayerIndex >= players.size()) {
             // All players done → dealer turn
             isGameReady = false;
+            for (int _d=0;_d<15;_d++) scheduledActions.add(() -> {});
             scheduledActions.add(() -> {
                 phaseOrdinal = Phase.DEALER.ordinal();
                 java.util.Arrays.stream(dealerSlots).filter(s -> !s.isEmpty()).flatMap(s -> s.stream()).filter(Card::flipped).findFirst().ifPresent(Card::flip);
@@ -328,10 +345,12 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
 
     // ─── DEALER auto-play ─────────────────────────────────────────────────────
     private void runDealerTurn() {
-        GameSlot _tmp = new GameSlot(dealerCards, 0,0,0,0);
-        int dv = handValue(_tmp);
+        java.util.LinkedList<Card> all = new java.util.LinkedList<>();
+        for (GameSlot s : dealerSlots) s.stream().forEach(all::add);
+        int dv = handValue(new GameSlot(all, 0,0,0,0));
         if (dv < 17) {
             isGameReady = false;
+            for (int _d=0;_d<15;_d++) scheduledActions.add(() -> {});
             scheduledActions.add(() -> {
                 if (!drawPile.isEmpty()) {
                     Card c = drawPile.removeLast();
@@ -339,8 +358,9 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
                     int dIdx2 = 0; for (int _i=0;_i<dealerSlots.length;_i++) { if (dealerSlots[_i].isEmpty()) { dIdx2=_i; break; } }
                     dealerSlots[dIdx2].add(c);
                     dealerCards.add(c);
-                    GameSlot _tmp2 = new GameSlot(dealerCards, 0,0,0,0);
-                    table(Component.translatable("message.charta.blackjack.dealer_hits", handValue(_tmp2)));
+                    java.util.LinkedList<Card> _all = new java.util.LinkedList<>();
+                    for (GameSlot _s : dealerSlots) _s.stream().forEach(_all::add);
+                    table(Component.translatable("message.charta.blackjack.dealer_hits", handValue(new GameSlot(_all, 0,0,0,0))));
                 }
                 // tick() will call runGame() → runDealerTurn() again
             });
@@ -354,24 +374,31 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
     private void resolveRound(int dealerValue) {
         boolean dealerBust = dealerValue > 21;
         if (dealerBust) table(Component.translatable("message.charta.blackjack.dealer_busts").withStyle(ChatFormatting.GREEN));
+        else table(Component.literal("Dealer stands at " + dealerValue).withStyle(ChatFormatting.GRAY));
 
         boolean anyWithChips = false;
         for (int i = 0; i < players.size(); i++) {
+            if (bets[i] < 0) continue; // bankrupt — not in this round
             CardPlayer p  = players.get(i);
             int pv        = handValue(getPlayerHand(p));
             boolean bjack = pv == 21 && getPlayerHand(p).stream().count() == 2;
 
             if (busted[i]) {
                 play(p, Component.translatable("message.charta.blackjack.lost", bets[i]).withStyle(ChatFormatting.RED));
+                table(Component.literal("").append(p.getColoredName()).append(Component.literal(" busted — lost " + bets[i] + "♦").withStyle(ChatFormatting.RED)));
             } else if (dealerBust || pv > dealerValue) {
                 int win = bjack ? (int)(bets[i] * 1.5) : bets[i];
                 chips[i] += bets[i] + win;
+                String winMsg = bjack ? " BLACKJACK! +" + win + "♦" : " wins +" + win + "♦";
                 play(p, Component.translatable("message.charta.blackjack.won", win).withStyle(ChatFormatting.GREEN));
+                table(Component.literal("").append(p.getColoredName()).append(Component.literal(winMsg).withStyle(ChatFormatting.GREEN)));
             } else if (pv == dealerValue) {
-                chips[i] += bets[i]; // push
+                chips[i] += bets[i];
                 play(p, Component.translatable("message.charta.blackjack.push").withStyle(ChatFormatting.YELLOW));
+                table(Component.literal("").append(p.getColoredName()).append(Component.literal(" push — bet returned").withStyle(ChatFormatting.YELLOW)));
             } else {
                 play(p, Component.translatable("message.charta.blackjack.lost", bets[i]).withStyle(ChatFormatting.RED));
+                table(Component.literal("").append(p.getColoredName()).append(Component.literal(" lost " + bets[i] + "♦ (dealer " + dealerValue + " > " + pv + ")").withStyle(ChatFormatting.RED)));
             }
 
             if (chips[i] > 0) anyWithChips = true;
@@ -477,6 +504,31 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
         return (v >= 2 && v <= 10) ? v : 10;
     }
 
+    /**
+     * Called by CardTableBlockEntity when a player leaves mid-game.
+     * Marks them as bankrupt/skipped and advances the game state if needed.
+     */
+    public void onPlayerLeft(int idx) {
+        if (idx < 0 || idx >= players.size()) return;
+        busted[idx] = true;
+        chips[idx]  = 0;
+        bets[idx]   = -1; // sentinel: skip this player everywhere
+
+        Phase phase = Phase.values()[phaseOrdinal];
+        if (phase == Phase.BETTING) {
+            // If they hadn't bet yet, mark them and re-check if all others are done
+            checkAllBetsPlaced();
+        } else if (phase == Phase.PLAYING) {
+            // If it was this player's turn, advance
+            if (waitingForPlayAction && currentPlayer == players.get(idx)) {
+                waitingForPlayAction = false;
+                activePlayerIndex++;
+                isGameReady = false;
+                scheduledActions.add(() -> {});
+            }
+        }
+    }
+
     @Override
     public void endGame() {
         if (isGameOver) return;
@@ -501,6 +553,31 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
     }
 
     @Override public int getMinPlayers() { return 1; }
-    public int getDealerValue()          { return handValue(new GameSlot(dealerCards, 0,0,0,0)); }
+
+    /**
+     * Prevents a player with 0 chips from sitting down again mid-game.
+     * Called only at game-start, so we use it to check the starting state.
+     */
+    @Override
+    public com.mojang.datafixers.util.Either<dev.lucaargolo.charta.common.game.api.game.Game<?,?>, net.minecraft.network.chat.Component>
+    playerPredicate(java.util.List<CardPlayer> players) {
+        return com.mojang.datafixers.util.Either.left(this);
+    }
+
+    /**
+     * Called by CardTableBlockEntity logic to check if a specific player
+     * is allowed to rejoin a running Blackjack game.
+     */
+    public boolean canRejoin(CardPlayer player) {
+        int idx = players.indexOf(player);
+        if (idx < 0) return true;   // new player, allow
+        return chips[idx] > 0;       // only allow if they still have chips
+    }
+    public int getDealerValue() {
+        // Count all cards in synced dealerSlots (works on both client and server)
+        java.util.LinkedList<Card> all = new java.util.LinkedList<>();
+        for (GameSlot s : dealerSlots) s.stream().forEach(all::add);
+        return handValue(new GameSlot(all, 0, 0, 0, 0));
+    }
     public int getStartingChipsPublic()  { return startingChips(); }
 }

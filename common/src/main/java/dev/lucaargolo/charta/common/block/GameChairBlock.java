@@ -84,6 +84,31 @@ public class GameChairBlock extends BarStoolBlock {
     }
 
     @Override
+    public boolean tryAndSit(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player) {
+        // Block bankrupt players from rejoining a running Blackjack game
+        if (!level.isClientSide) {
+            Direction facing = state.getValue(FACING);
+            var opt = level.getBlockEntity(pos.relative(facing),
+                    dev.lucaargolo.charta.common.block.entity.ModBlockEntityTypes.CARD_TABLE.get());
+            if (opt.isPresent()) {
+                dev.lucaargolo.charta.common.game.api.game.Game<?,?> game = opt.get().getGame();
+                if (game instanceof dev.lucaargolo.charta.common.game.impl.blackjack.BlackjackGame bjGame
+                        && !game.isGameOver()) {
+                    dev.lucaargolo.charta.common.game.api.CardPlayer cp =
+                            ((dev.lucaargolo.charta.mixed.LivingEntityMixed) player).charta_getCardPlayer();
+                    if (!bjGame.canRejoin(cp)) {
+                        player.displayClientMessage(
+                                Component.literal("No chips left — you cannot rejoin this game.")
+                                        .withStyle(ChatFormatting.RED), true);
+                        return false;
+                    }
+                }
+            }
+        }
+        return super.tryAndSit(state, level, pos, player);
+    }
+
+    @Override
     protected @NotNull VoxelShape getShape(@NotNull BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos, @NotNull CollisionContext context) {
         return switch (state.getValue(FACING)) {
             case SOUTH -> SOUTH_SHAPE;
