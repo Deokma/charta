@@ -89,6 +89,7 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
     // --- Synced game state (public for TexasHoldemMenu ContainerData) ---
     public int[]     chips;      // chips per player index
     public int[]     roundBets;  // amount bet this round by each player index
+    public int[]     totalCommitted; // total chips committed to pot this entire hand
     public boolean[] folded;     // folded[i] = true if player i has folded
     public boolean[] allIn;      // allIn[i] = true if player i is all-in
     public int  pot;
@@ -121,10 +122,11 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
     public TexasHoldemGame(List<CardPlayer> players, Deck deck) {
         super(players, deck);
         int n = Math.max(players.size(), 1);
-        this.chips     = new int[n];
-        this.roundBets = new int[n];
-        this.folded    = new boolean[n];
-        this.allIn     = new boolean[n];
+        this.chips          = new int[n];
+        this.roundBets      = new int[n];
+        this.totalCommitted = new int[n];
+        this.folded         = new boolean[n];
+        this.allIn          = new boolean[n];
         this.phaseOrdinal = Phase.PREFLOP.ordinal();
         this.dealerIndex  = 0;
 
@@ -321,6 +323,7 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
 
         // Clear state
         Arrays.fill(roundBets, 0);
+        Arrays.fill(totalCommitted, 0);
         Arrays.fill(folded,    false);
         Arrays.fill(allIn,     false);
         pot        = 0;
@@ -406,6 +409,7 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
         int actual = Math.min(amount, chips[playerIdx]);
         chips[playerIdx] -= actual;
         roundBets[playerIdx] += actual;
+        totalCommitted[playerIdx] += actual;
         pot += actual;
         if (chips[playerIdx] == 0) allIn[playerIdx] = true;
         play(p, Component.translatable("message.charta.texas_holdem.posted_blind", actual));
@@ -430,10 +434,8 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
     private void runBettingRound() {
         if (isGameOver) return;
 
-        // Check if only one player remains (all others folded)
-        long activePlayers = countActivePlayers();
-        if (activePlayers <= 1) {
-            // Award pot to the last standing player, then deal a new hand or end
+        // Only one player not folded → they win the pot immediately
+        if (countActivePlayers() <= 1) {
             awardPotToLastPlayer();
             return;
         }
@@ -495,9 +497,10 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
                     play(player, Component.translatable("message.charta.texas_holdem.checked"));
                 } else {
                     int paid = Math.min(owed, chips[playerIdx]);
-                    chips[playerIdx]     -= paid;
-                    roundBets[playerIdx] += paid;
-                    pot                  += paid;
+                    chips[playerIdx]          -= paid;
+                    roundBets[playerIdx]       += paid;
+                    totalCommitted[playerIdx]  += paid;
+                    pot                        += paid;
                     if (chips[playerIdx] == 0) {
                         allIn[playerIdx] = true;
                         play(player, Component.translatable("message.charta.texas_holdem.all_in", roundBets[playerIdx]));
@@ -528,9 +531,10 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
     private void doRaise(int playerIdx, CardPlayer player, int raiseBy) {
         int newBet = roundBets[playerIdx] + raiseBy;
         int paid   = Math.min(raiseBy, chips[playerIdx]);
-        chips[playerIdx]     -= paid;
-        roundBets[playerIdx] += paid;
-        pot                  += paid;
+        chips[playerIdx]          -= paid;
+        roundBets[playerIdx]       += paid;
+        totalCommitted[playerIdx]  += paid;
+        pot                        += paid;
 
         if (chips[playerIdx] == 0) {
             allIn[playerIdx] = true;
@@ -658,87 +662,144 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
         for (int i = 0; i < players.size(); i++) {
             if (!folded[i]) contenders.add(i);
         }
-
         revealedPlayers.addAll(contenders);
 
-        if (contenders.isEmpty()) {
-            onHandComplete();
-            return;
-        }
+        if (contenders.isEmpty()) { onHandComplete(); return; }
 
-        // Evaluate all contenders
-        long bestScore = Long.MIN_VALUE;
-        for (int idx : contenders) {
-            List<Card> allCards = new ArrayList<>(getPlayerHand(players.get(idx)).stream().toList());
-            allCards.addAll(community);
-            long score = HandEvaluator.evaluate(allCards);
-            if (score > bestScore) bestScore = score;
-        }
+        // ── Side-pot calculation ──────────────────────────────────────────────
+        // Each player can only win up to their own total bet from each opponent.
+        // We distribute the pot as a series of side pots, from smallest to largest.
 
-        final long winningScore = bestScore;
-        List<Integer> winners = new ArrayList<>();
-        for (int idx : contenders) {
-            List<Card> allCards = new ArrayList<>(getPlayerHand(players.get(idx)).stream().toList());
-            allCards.addAll(community);
-            if (HandEvaluator.evaluate(allCards) == winningScore) winners.add(idx);
-        }
+        // Build total contributions per player across all rounds
+        // roundBets tracks THIS round; we need cumulative total. Use a separate tracker.
+        // Actually roundBets is reset each round — we need to track it cumulatively.
+        // Simple approach: distribute by sorting contenders by total invested, iterating.
 
-        int share = pot / winners.size();
+        // totalInvested[i] = how much player i put in the pot this hand (all rounds combined)
+        // Since pot = sum of all chips collected, and we track roundBets per round reset,
+        // we store totalBet accumulated in a field. For now, reconstruct from the pot
+        // by using the standard side-pot algorithm on committed[] array.
+        // committed[i] is stored in the game as totalCommitted[i] (we add it below).
 
-        for (int winnerIdx : winners) {
-            chips[winnerIdx] += share;
-            List<Card> allCards = new ArrayList<>(getPlayerHand(players.get(winnerIdx)).stream().toList());
-            allCards.addAll(community);
-            String handName = HandEvaluator.getHandName(allCards);
-            Component handComp = Component.literal(handName).withStyle(ChatFormatting.AQUA);
+        int n = players.size();
+        int remaining = pot;
 
-            // History table entry: "PlayerName won 200♦ with Full House"
-            table(Component.translatable(
-                    "message.charta.texas_holdem.showdown_result",
-                    players.get(winnerIdx).getColoredName(),
-                    Component.literal(String.valueOf(share)).withStyle(ChatFormatting.GOLD),
-                    handComp));
+        // Sort contenders by how much they committed (ascending) so smallest all-in first
+        List<Integer> sorted = new ArrayList<>(contenders);
+        sorted.sort(Comparator.comparingInt(i -> totalCommitted[i]));
 
-            // Direct message shown under the winner's avatar in game history panel
-            play(players.get(winnerIdx),
-                    Component.translatable("message.charta.texas_holdem.showdown_result_short",
-                            Component.literal("+" + share + "♦").withStyle(ChatFormatting.GOLD),
-                            handComp));
-        }
+        int distributed = 0;
+        // Process each contender as a potential side-pot boundary
+        List<Integer> eligible = new ArrayList<>(contenders);
+        int prevCap = 0;
 
-        // Show each non-winning contender's hand in history
-        for (int idx : contenders) {
-            if (!winners.contains(idx)) {
+        for (int ci = 0; ci < sorted.size(); ci++) {
+            int capPlayer = sorted.get(ci);
+            int cap = totalCommitted[capPlayer];
+            if (cap <= prevCap) continue;  // already handled this level
+
+            // This side pot: each player contributes at most (cap - prevCap)
+            int sidePot = 0;
+            for (int i = 0; i < n; i++) {
+                sidePot += Math.min(Math.max(0, totalCommitted[i] - prevCap), cap - prevCap);
+            }
+            if (sidePot <= 0) { prevCap = cap; continue; }
+
+            // Find best hand among players eligible for this side pot
+            long bestScore = Long.MIN_VALUE;
+            for (int idx : eligible) {
                 List<Card> allCards = new ArrayList<>(getPlayerHand(players.get(idx)).stream().toList());
                 allCards.addAll(community);
-                String handName = HandEvaluator.getHandName(allCards);
-                play(players.get(idx),
-                        Component.translatable("message.charta.texas_holdem.hand_name",
-                                Component.literal(handName).withStyle(ChatFormatting.GRAY)));
+                long score = HandEvaluator.evaluate(allCards);
+                if (score > bestScore) bestScore = score;
             }
+            final long winScore = bestScore;
+            List<Integer> winners = eligible.stream()
+                    .filter(idx -> {
+                        List<Card> ac = new ArrayList<>(getPlayerHand(players.get(idx)).stream().toList());
+                        ac.addAll(community);
+                        return HandEvaluator.evaluate(ac) == winScore;
+                    }).toList();
+
+            int share = sidePot / winners.size();
+            for (int winnerIdx : winners) {
+                chips[winnerIdx] += share;
+                distributed += share;
+                List<Card> ac = new ArrayList<>(getPlayerHand(players.get(winnerIdx)).stream().toList());
+                ac.addAll(community);
+                String handName = HandEvaluator.getHandName(ac);
+                Component handComp = Component.literal(handName).withStyle(ChatFormatting.AQUA);
+                table(Component.translatable("message.charta.texas_holdem.showdown_result",
+                        players.get(winnerIdx).getColoredName(),
+                        Component.literal(String.valueOf(share)).withStyle(ChatFormatting.GOLD),
+                        handComp));
+                play(players.get(winnerIdx), Component.translatable(
+                        "message.charta.texas_holdem.showdown_result_short",
+                        Component.literal("+" + share + "♦").withStyle(ChatFormatting.GOLD),
+                        handComp));
+            }
+
+            // Show losing contenders' hands
+            for (int idx : eligible) {
+                if (!winners.contains(idx)) {
+                    List<Card> ac = new ArrayList<>(getPlayerHand(players.get(idx)).stream().toList());
+                    ac.addAll(community);
+                    play(players.get(idx), Component.translatable("message.charta.texas_holdem.hand_name",
+                            Component.literal(HandEvaluator.getHandName(ac)).withStyle(ChatFormatting.GRAY)));
+                }
+            }
+
+            // Players at their cap are no longer eligible for larger side pots
+            eligible.removeIf(idx -> totalCommitted[idx] <= cap);
+            prevCap = cap;
+        }
+
+        // Any rounding remainder goes to first winner
+        int remainder = pot - distributed;
+        if (remainder > 0 && !contenders.isEmpty()) {
+            chips[contenders.get(0)] += remainder;
         }
 
         pot = 0;
 
-        // Pause for ~3 seconds (60 ticks) so clients can read the showdown result.
-        // isGameReady=false activates the scheduledActions processing in Game.tick().
-        for (int i = 0; i < 60; i++) {
-            scheduledActions.add(() -> {});
-        }
+        for (int i = 0; i < 60; i++) scheduledActions.add(() -> {});
         scheduledActions.add(this::onHandComplete);
         isGameReady = false;
     }
 
     /** Called when all but one player folds mid-round. */
     private void awardPotToLastPlayer() {
+        // Find the single non-folded player
+        int lastIdx = -1;
         for (int i = 0; i < players.size(); i++) {
-            if (!folded[i]) {
-                chips[i] += pot;
-                play(players.get(i), Component.translatable("message.charta.texas_holdem.wins_pot", pot));
-                pot = 0;
-                break;
+            if (!folded[i]) { lastIdx = i; break; }
+        }
+        if (lastIdx < 0) { onHandComplete(); return; }
+
+        // The last player can win at most (their own committed × number of players) from the pot.
+        // Any excess goes back to the players who over-contributed (folded with more chips in).
+        int cap = totalCommitted[lastIdx];
+        int winnable = 0;
+        int[] refunds = new int[players.size()];
+        for (int i = 0; i < players.size(); i++) {
+            int contrib = totalCommitted[i];
+            int take    = Math.min(contrib, cap);
+            winnable   += take;
+            refunds[i]  = contrib - take;
+        }
+
+        chips[lastIdx] += winnable;
+        play(players.get(lastIdx), Component.translatable("message.charta.texas_holdem.wins_pot", winnable));
+
+        // Refund excess to folded players
+        for (int i = 0; i < players.size(); i++) {
+            if (refunds[i] > 0) {
+                chips[i] += refunds[i];
+                play(players.get(i), Component.translatable("message.charta.texas_holdem.refunded", refunds[i]));
             }
         }
+
+        pot = 0;
         onHandComplete();
     }
 
@@ -843,6 +904,7 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
 
     private void resetRound() {
         Arrays.fill(roundBets, 0);
+        Arrays.fill(totalCommitted, 0);
         Arrays.fill(folded,    false);
         Arrays.fill(allIn,     false);
         pot        = 0;
@@ -860,11 +922,20 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
         }
     }
 
+    /** Players still in the hand (not folded), including all-in players. */
     private long countActivePlayers() {
         long count = 0;
         for (int i = 0; i < players.size(); i++) {
-            // Player is active if not folded AND has chips (bankrupt = can't act)
-            if (!folded[i] && chips[i] > 0) count++;
+            if (!folded[i]) count++;
+        }
+        return count;
+    }
+
+    /** Players who can still bet (not folded, not all-in, have chips). */
+    private long countBettingPlayers() {
+        long count = 0;
+        for (int i = 0; i < players.size(); i++) {
+            if (!folded[i] && !allIn[i] && chips[i] > 0) count++;
         }
         return count;
     }

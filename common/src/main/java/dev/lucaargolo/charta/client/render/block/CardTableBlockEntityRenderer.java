@@ -155,14 +155,8 @@ public class CardTableBlockEntityRenderer implements BlockEntityRenderer<CardTab
                 //   stack 1 (blue) – back-right
                 //   stack 2 (green)– front-centre
                 final int[]   STACK_COLORS  = { 1, 5, 2 };          // red, blue, green
-                // (sideOffset, inwardOffset) for each stack in table units
                 final float[] SIDE_OFF   = { -11f,  11f,   0f };
-                final float[] INWARD_OFF = {   8f,   8f, -10f };
                 final int     MAX_DISCS    = 12;
-                // Hand slots sit at ~-147.5 units outside the table edge.
-                // Inward vector points toward centre (table is 0..160).
-                // 160 units moves the anchor to ~+12 — just inside the border.
-                final float   INWARD_DIST  = 160f;
 
                 for (int pi = 0; pi < chips.length; pi++) {
                     int handSlotIndex = gameSlotCount + pi;
@@ -181,24 +175,45 @@ public class CardTableBlockEntityRenderer implements BlockEntityRenderer<CardTab
                     GameSlot handSlot = blockEntity.getSlot(handSlotIndex);
                     float hx    = handSlot.lerpX(partialTick);
                     float hy    = handSlot.lerpY(partialTick);
-                    float angle = handSlot.lerpAngle(partialTick);
-                    float rad   = (float) Math.toRadians(angle);
 
-                    float inX   = -(float) Math.sin(rad);
-                    float inY   =  (float) Math.cos(rad);
-                    float sideX =  (float) Math.cos(rad);
-                    float sideY =  (float) Math.sin(rad);
+                    // Hand slots sit exactly 147.5 table-units outside the table edge,
+                    // regardless of table size or player direction.
+                    // Moving from the hand slot toward the table centre by (147.5 + INSET)
+                    // lands chips just inside the edge — works for any table size.
+                    final float HAND_TO_EDGE = 147.5f;
+                    final float DEPTH_INSET  = 2f;
 
-                    float anchorX = hx + inX * INWARD_DIST;
-                    float anchorY = hy + inY * INWARD_DIST;
+                    float tableCX = 80f + blockEntity.centerOffset.x * 160f;
+                    float tableCY = 80f + blockEntity.centerOffset.y * 160f;
 
-                    // Slightly varied heights: 100 %, 85 %, 70 % — looks natural
-                    float[] fractions = { 1.0f, 0.85f, 0.70f };
+                    float dx = tableCX - hx;
+                    float dy = tableCY - hy;
+                    float dist = (float) Math.sqrt(dx * dx + dy * dy);
+                    // unit vec toward centre
+                    float nx = dx / dist;
+                    float ny = dy / dist;
+                    // side vec (perpendicular, left/right from player's view along edge)
+                    float sideX = -ny;
+                    float sideY =  nx;
+
+                    float anchorX = hx + nx * (HAND_TO_EDGE + DEPTH_INSET);
+                    float anchorY = hy + ny * (HAND_TO_EDGE + DEPTH_INSET);
+
+                    // 3 stacks in a small triangle: spread along the edge (sideX/Y)
+                    // SIDE_OFF = offset left/right along edge; second axis offset along depth
+                    final float[] SIDE_OFF_DEPTH = { -5f,  5f,  0f };  // along depth axis
+                    final float[] fractions = { 1.0f, 0.85f, 0.70f };
 
                     for (int s = 0; s < STACK_COLORS.length; s++) {
                         int discs = Math.max(1, Math.round(baseDiscs * fractions[s]));
-                        float cx  = anchorX + sideX * SIDE_OFF[s] + inX * INWARD_OFF[s];
-                        float cy  = anchorY + sideY * SIDE_OFF[s] + inY * INWARD_OFF[s];
+                        float cx  = anchorX + sideX * SIDE_OFF[s];
+                        float cy  = anchorY + sideY * SIDE_OFF[s];
+                        // Push alternate stacks slightly toward/away from edge for triangle look
+                        if (Math.abs(sideX) >= Math.abs(sideY)) {
+                            cy += SIDE_OFF_DEPTH[s]; // NORTH/SOUTH: vary Y
+                        } else {
+                            cx += SIDE_OFF_DEPTH[s]; // EAST/WEST: vary X
+                        }
                         drawChipStack3D(poseStack, bufferSource, packedLight,
                                 cx, cy, discs, isFolded, isAllIn, STACK_COLORS[s]);
                     }

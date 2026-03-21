@@ -101,6 +101,7 @@ public abstract class ChartaModClient {
         pm.registerClientHandler(dev.lucaargolo.charta.common.network.TableScreenPayload.class,                ClientPayloadHandlers::handleTableScreen);
         pm.registerClientHandler(dev.lucaargolo.charta.common.network.UpdateCardContainerCarriedPayload.class, ClientPayloadHandlers::handleUpdateCarried);
         pm.registerClientHandler(dev.lucaargolo.charta.common.network.UpdateCardContainerSlotPayload.class,    ClientPayloadHandlers::handleUpdateSlot);
+        pm.registerClientHandler(dev.lucaargolo.charta.common.network.TexasHoldemChipsPayload.class,           ClientPayloadHandlers::handleTexasHoldemChips);
 
         this.registerEntityRenderer(ModEntityTypes.SEAT, NoopRenderer::new);
         this.registerEntityRenderer(ModEntityTypes.IRON_LEASH_KNOT, IronLeashKnotRenderer::new);

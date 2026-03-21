@@ -30,6 +30,7 @@ public abstract class ModPacketManager {
         register(PacketInfo.PLAY_TO_BOTH, PlayerOptionsPayload.class);
         register(PacketInfo.PLAY_TO_BOTH, GameLeavePayload.class);
         register(PacketInfo.PLAY_TO_SERVER, TexasHoldemActionPayload.class);
+        register(PacketInfo.PLAY_TO_CLIENT, TexasHoldemChipsPayload.class);
     }
 
     protected abstract <T extends CustomPacketPayload> void register(PacketInfo info, Class<T> klass);

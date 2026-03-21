@@ -423,6 +423,24 @@ public class CardTableBlockEntity extends BlockEntity {
                     }
                     blockEntity.playersDirty = false;
                 }
+                // Broadcast chip state to all chunk watchers every 20 ticks so
+                // spectators (not just menu holders) can see chip stacks on the table.
+                if (game instanceof dev.lucaargolo.charta.common.game.impl.texasholdem.TexasHoldemGame thGame
+                        && blockEntity.age % 20 == 0) {
+                    int n = game.getPlayers().size();
+                    int[] chips = Arrays.copyOf(thGame.chips, n);
+                    int foldedMask = 0, allInMask = 0;
+                    for (int i = 0; i < n; i++) {
+                        if (thGame.folded[i]) foldedMask |= (1 << i);
+                        if (thGame.allIn[i])  allInMask  |= (1 << i);
+                    }
+                    ChartaMod.getPacketManager().sendToPlayersTrackingChunk(
+                            (ServerLevel) level, new ChunkPos(pos),
+                            new dev.lucaargolo.charta.common.network.TexasHoldemChipsPayload(
+                                    pos, chips, foldedMask, allInMask,
+                                    thGame.getStartingChipsPublic(),
+                                    thGame.getSlots().size()));
+                }
                 game.tick();
             }else{
                 ChartaMod.getPacketManager().sendToPlayersTrackingChunk((ServerLevel) level, new ChunkPos(pos), new GameSlotResetPayload(pos));

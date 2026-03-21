@@ -27,6 +27,16 @@ import java.util.concurrent.Executor;
 
 public class ClientPayloadHandlers {
 
+    public static void handleTexasHoldemChips(dev.lucaargolo.charta.common.network.TexasHoldemChipsPayload payload, Executor executor) {
+        executor.execute(() -> {
+            ChartaModClient.TABLE_POKER_CHIPS.put(payload.pos(), payload.chips());
+            ChartaModClient.TABLE_POKER_GAME_SLOT_COUNT.put(payload.pos(), payload.gameSlotCount());
+            ChartaModClient.TABLE_POKER_FOLDED.put(payload.pos(), payload.foldedMask());
+            ChartaModClient.TABLE_POKER_ALLIN.put(payload.pos(), payload.allInMask());
+            ChartaModClient.TABLE_POKER_STARTING_CHIPS.put(payload.pos(), payload.startingChips());
+        });
+    }
+
     public static void handleCardDecks(CardDecksPayload payload, Executor executor) {
         executor.execute(() -> ChartaMod.CARD_DECKS.setDecks(payload.cardDecks()));
     }
