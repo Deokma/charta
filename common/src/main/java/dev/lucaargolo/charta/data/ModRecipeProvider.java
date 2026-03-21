@@ -43,25 +43,25 @@ public class ModRecipeProvider extends RecipeProvider {
 
         ModBlocks.CARD_TABLE_MAP.forEach((woodType, holder) -> {
             ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, holder.get(), 1)
-                .pattern("PSP")
-                .pattern("L L")
-                .define('P', getPlanks(woodType, itemLookup))
-                .define('S', getSlab(woodType, itemLookup))
-                .define('L', getLog(woodType, itemLookup))
-                .unlockedBy("has_wood", has(getLog(woodType, itemLookup)))
-                .save(recipeOutput);
+                    .pattern("PSP")
+                    .pattern("L L")
+                    .define('P', getPlanks(woodType, itemLookup))
+                    .define('S', getSlab(woodType, itemLookup))
+                    .define('L', getLog(woodType, itemLookup))
+                    .unlockedBy("has_wood", has(getLog(woodType, itemLookup)))
+                    .save(recipeOutput);
         });
 
         ModBlocks.GAME_CHAIR_MAP.forEach((woodType, holder) -> {
             ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, holder.get(), 1)
-                .pattern("P ")
-                .pattern("PS")
-                .pattern("LL")
-                .define('P', getPlanks(woodType, itemLookup))
-                .define('S', getSlab(woodType, itemLookup))
-                .define('L', getLog(woodType, itemLookup))
-                .unlockedBy("has_wood", has(getLog(woodType, itemLookup)))
-                .save(recipeOutput);
+                    .pattern("P ")
+                    .pattern("PS")
+                    .pattern("LL")
+                    .define('P', getPlanks(woodType, itemLookup))
+                    .define('S', getSlab(woodType, itemLookup))
+                    .define('L', getLog(woodType, itemLookup))
+                    .unlockedBy("has_wood", has(getLog(woodType, itemLookup)))
+                    .save(recipeOutput);
         });
 
         ModBlocks.BAR_STOOL_MAP.forEach((woodType, holder) -> {
@@ -92,6 +92,14 @@ public class ModRecipeProvider extends RecipeProvider {
                 .define('I', NUGGETS_IRON)
                 .define('L', Items.LEAD)
                 .unlockedBy("has_lead", has(Items.LEAD))
+                .save(recipeOutput);
+
+        // Dealer Table: crafting table + any deck of cards (shapeless)
+        net.minecraft.data.recipes.ShapelessRecipeBuilder
+                .shapeless(RecipeCategory.DECORATIONS, ModBlocks.DEALER_TABLE.get(), 1)
+                .requires(Items.CRAFTING_TABLE)
+                .requires(ModItems.DECK.get())
+                .unlockedBy("has_deck", has(ModItems.DECK.get()))
                 .save(recipeOutput);
     }
 
