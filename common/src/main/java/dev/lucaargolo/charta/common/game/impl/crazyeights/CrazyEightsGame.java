@@ -214,7 +214,7 @@ public class CrazyEightsGame extends Game<CrazyEightsGame, CrazyEightsMenu> {
                     if(!currentPlayer.shouldCompute()) {
                         playPile.removeLast();
                     }
-                    isChoosingWild = false;
+                    // isChoosingWild stays true here so the check below can detect we were choosing suit
                 }else{
                     play(currentPlayer, Component.translatable("message.charta.played_a_card", Component.translatable(deck.getCardTranslatableKey(card)).withColor(deck.getCardColor(card))));
                 }
@@ -228,6 +228,11 @@ public class CrazyEightsGame extends Game<CrazyEightsGame, CrazyEightsMenu> {
                 if(getFullHand(currentPlayer).findAny().isEmpty()) {
                     //If the player hand is empty, they win!
                     endGame();
+                }else if(isChoosingWild) {
+                    // The suit was just chosen — we already handled it above.
+                    // isChoosingWild is still true here (we only set it false above), so clear it and move on.
+                    isChoosingWild = false;
+                    nextPlayerAndRunGame();
                 }else if(card.rank() == Ranks.EIGHT) {
                     //If they played a wild card (Eight) we need to set up the suit choosing logic.
                     if(currentPlayer.shouldCompute()) {
