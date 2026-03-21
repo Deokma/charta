@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SLS",
+    " P "
+  ],
+  "key": {
+    "P": {
+      "item": "minecraft:acacia_planks"
+    },
+    "S": {
+      "item": "minecraft:acacia_slab"
+    },
+    "L": {
+      "item": "minecraft:acacia_log"
+    }
+  },
+  "result": {
+    "count": 1,
+    "id": "charta:acacia_bar_stool"
+  }
+}

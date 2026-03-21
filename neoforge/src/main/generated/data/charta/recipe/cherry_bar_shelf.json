@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SLS",
+    "SLS"
+  ],
+  "key": {
+    "S": {
+      "item": "minecraft:cherry_slab"
+    },
+    "L": {
+      "item": "minecraft:cherry_log"
+    }
+  },
+  "result": {
+    "count": 1,
+    "id": "charta:cherry_bar_shelf"
+  }
+}

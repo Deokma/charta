@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SLS",
+    "SLS"
+  ],
+  "key": {
+    "S": {
+      "item": "minecraft:bamboo_slab"
+    },
+    "L": {
+      "item": "minecraft:bamboo_log"
+    }
+  },
+  "result": {
+    "count": 1,
+    "id": "charta:bamboo_bar_shelf"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SLS",
+    "SLS"
+  ],
+  "key": {
+    "S": {
+      "item": "minecraft:mangrove_slab"
+    },
+    "L": {
+      "item": "minecraft:mangrove_log"
+    }
+  },
+  "result": {
+    "count": 1,
+    "id": "charta:mangrove_bar_shelf"
+  }
+}
