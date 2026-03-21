@@ -1,10 +1,8 @@
 package dev.lucaargolo.charta.common.game.impl.tilekingdoms;
 
 import dev.lucaargolo.charta.common.ChartaMod;
-import dev.lucaargolo.charta.common.block.entity.ModBlockEntityTypes;
 import dev.lucaargolo.charta.common.game.api.CardPlayer;
 import dev.lucaargolo.charta.common.game.api.GamePlay;
-import dev.lucaargolo.charta.common.menu.AbstractCardMenu;
 import dev.lucaargolo.charta.mixed.LivingEntityMixed;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -18,9 +16,8 @@ import java.util.concurrent.Executor;
 
 public record TileKingdomsActionPayload(int containerId, int action) implements CustomPacketPayload {
 
-    /** action == ROTATE: rotate current tile */
-    public static final int ROTATE = -1;
-    /** action >= 0: packed placement (see TileKingdomsGame.packAction) */
+    public static final int ROTATE     = -1;
+    public static final int SKIP_CLAIM = -2;
 
     public static final Type<TileKingdomsActionPayload> TYPE =
             new Type<>(ChartaMod.id("tile_kingdoms_action"));
@@ -39,13 +36,23 @@ public record TileKingdomsActionPayload(int containerId, int action) implements 
 
             TileKingdomsGame game = menu.getGame();
             CardPlayer cp = mixed.charta_getCardPlayer();
+            int action = payload.action();
 
-            if (payload.action() == ROTATE) {
+            if (action == ROTATE) {
                 game.rotateTile();
-            } else {
-                // Placement
-                if (game.canPlay(cp, new GamePlay(List.of(), payload.action()))) {
-                    cp.play(new GamePlay(List.of(), payload.action()));
+            } else if (action == SKIP_CLAIM) {
+                if (game.canPlay(cp, new GamePlay(List.of(), SKIP_CLAIM))) {
+                    cp.play(new GamePlay(List.of(), SKIP_CLAIM));
+                }
+            } else if (TileKingdomsGame.isClaimAction(action)) {
+                // Claim feature: only valid in PHASE_CLAIM
+                if (game.canPlay(cp, new GamePlay(List.of(), action))) {
+                    cp.play(new GamePlay(List.of(), action));
+                }
+            } else if (action >= 0) {
+                // Tile placement
+                if (game.canPlay(cp, new GamePlay(List.of(), action))) {
+                    cp.play(new GamePlay(List.of(), action));
                 }
             }
         });

@@ -453,6 +453,8 @@
   "charta_md:charta.how_to_play_crazy_eights": "charta:en_us/how_to_play_crazy_eights",
   "charta_md:charta.how_to_play_solitaire": "charta:en_us/how_to_play_solitaire",
   "charta_md:charta.how_to_play_texas_holdem": "charta:en_us/how_to_play_texas_holdem",
+  "charta_md:charta.how_to_play_tile_kingdoms": "charta:en_us/how_to_play_tile_kingdoms",
+  "charta:tile_kingdoms": "Tile Kingdoms",
 
   "button.charta.texas_holdem.fold": "Fold",
   "button.charta.texas_holdem.call": "Call",
