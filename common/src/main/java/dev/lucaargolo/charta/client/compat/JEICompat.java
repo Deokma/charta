@@ -1,6 +1,7 @@
 package dev.lucaargolo.charta.client.compat;
 
 import dev.lucaargolo.charta.common.ChartaMod;
+import dev.lucaargolo.charta.common.game.impl.blackjack.BlackjackScreen;
 import dev.lucaargolo.charta.common.game.impl.crazyeights.CrazyEightsScreen;
 import dev.lucaargolo.charta.common.game.impl.fun.FunScreen;
 import dev.lucaargolo.charta.common.game.impl.solitaire.SolitaireScreen;
@@ -20,6 +21,7 @@ public class JEICompat implements IModPlugin {
 
     @Override
     public void registerGuiHandlers(@NotNull IGuiHandlerRegistration registration) {
+        registration.addGuiScreenHandler(BlackjackScreen.class, new NoHandler<>());
         registration.addGuiScreenHandler(CrazyEightsScreen.class, new NoHandler<>());
         registration.addGuiScreenHandler(FunScreen.class, new NoHandler<>());
         registration.addGuiScreenHandler(SolitaireScreen.class, new NoHandler<>());
