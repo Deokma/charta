@@ -26,332 +26,145 @@
     {
       "card": {
         "components": {
-          "charta:suit": "charta:hearts",
-          "charta:rank": "charta:five",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:standard/hearts_five",
-      "translation": "card.charta.hearts.five"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:hearts",
-          "charta:rank": "charta:six",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:standard/hearts_six",
-      "translation": "card.charta.hearts.six"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:hearts",
-          "charta:rank": "charta:seven",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:standard/hearts_seven",
-      "translation": "card.charta.hearts.seven"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:hearts",
-          "charta:rank": "charta:eight",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:standard/hearts_eight",
-      "translation": "card.charta.hearts.eight"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:hearts",
+          "charta:suit": "charta:spades",
           "charta:rank": "charta:nine",
           "charta:flipped": false
         }
       },
-      "texture": "charta:standard/hearts_nine",
-      "translation": "card.charta.hearts.nine"
+      "texture": "charta:standard/spades_nine",
+      "translation": "card.charta.spades.nine"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:hearts",
+          "charta:suit": "charta:spades",
           "charta:rank": "charta:ten",
           "charta:flipped": false
         }
       },
-      "texture": "charta:standard/hearts_ten",
-      "translation": "card.charta.hearts.ten"
+      "texture": "charta:standard/spades_ten",
+      "translation": "card.charta.spades.ten"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:hearts",
+          "charta:suit": "charta:spades",
           "charta:rank": "charta:jack",
           "charta:flipped": false
         }
       },
-      "texture": "charta:standard/hearts_jack",
-      "translation": "card.charta.hearts.jack"
+      "texture": "charta:standard/spades_jack",
+      "translation": "card.charta.spades.jack"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:hearts",
+          "charta:suit": "charta:spades",
           "charta:rank": "charta:queen",
           "charta:flipped": false
         }
       },
-      "texture": "charta:standard/hearts_queen",
-      "translation": "card.charta.hearts.queen"
+      "texture": "charta:standard/spades_queen",
+      "translation": "card.charta.spades.queen"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:hearts",
+          "charta:suit": "charta:spades",
           "charta:rank": "charta:king",
           "charta:flipped": false
         }
       },
-      "texture": "charta:standard/hearts_king",
-      "translation": "card.charta.hearts.king"
+      "texture": "charta:standard/spades_king",
+      "translation": "card.charta.spades.king"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:hearts",
+          "charta:suit": "charta:spades",
           "charta:rank": "charta:ace",
           "charta:flipped": false
         }
       },
-      "texture": "charta:standard/hearts_ace",
-      "translation": "card.charta.hearts.ace"
+      "texture": "charta:standard/spades_ace",
+      "translation": "card.charta.spades.ace"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:hearts",
+          "charta:suit": "charta:spades",
           "charta:rank": "charta:two",
           "charta:flipped": false
         }
       },
-      "texture": "charta:standard/hearts_two",
-      "translation": "card.charta.hearts.two"
+      "texture": "charta:standard/spades_two",
+      "translation": "card.charta.spades.two"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:hearts",
+          "charta:suit": "charta:spades",
           "charta:rank": "charta:three",
           "charta:flipped": false
         }
       },
-      "texture": "charta:standard/hearts_three",
-      "translation": "card.charta.hearts.three"
+      "texture": "charta:standard/spades_three",
+      "translation": "card.charta.spades.three"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:hearts",
+          "charta:suit": "charta:spades",
           "charta:rank": "charta:four",
           "charta:flipped": false
         }
       },
-      "texture": "charta:standard/hearts_four",
-      "translation": "card.charta.hearts.four"
+      "texture": "charta:standard/spades_four",
+      "translation": "card.charta.spades.four"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:diamonds",
+          "charta:suit": "charta:spades",
           "charta:rank": "charta:five",
           "charta:flipped": false
         }
       },
-      "texture": "charta:standard/diamonds_five",
-      "translation": "card.charta.diamonds.five"
+      "texture": "charta:standard/spades_five",
+      "translation": "card.charta.spades.five"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:diamonds",
+          "charta:suit": "charta:spades",
           "charta:rank": "charta:six",
           "charta:flipped": false
         }
       },
-      "texture": "charta:standard/diamonds_six",
-      "translation": "card.charta.diamonds.six"
+      "texture": "charta:standard/spades_six",
+      "translation": "card.charta.spades.six"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:diamonds",
+          "charta:suit": "charta:spades",
           "charta:rank": "charta:seven",
           "charta:flipped": false
         }
       },
-      "texture": "charta:standard/diamonds_seven",
-      "translation": "card.charta.diamonds.seven"
+      "texture": "charta:standard/spades_seven",
+      "translation": "card.charta.spades.seven"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:diamonds",
+          "charta:suit": "charta:spades",
           "charta:rank": "charta:eight",
           "charta:flipped": false
         }
       },
-      "texture": "charta:standard/diamonds_eight",
-      "translation": "card.charta.diamonds.eight"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:diamonds",
-          "charta:rank": "charta:nine",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:standard/diamonds_nine",
-      "translation": "card.charta.diamonds.nine"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:diamonds",
-          "charta:rank": "charta:ten",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:standard/diamonds_ten",
-      "translation": "card.charta.diamonds.ten"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:diamonds",
-          "charta:rank": "charta:jack",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:standard/diamonds_jack",
-      "translation": "card.charta.diamonds.jack"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:diamonds",
-          "charta:rank": "charta:queen",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:standard/diamonds_queen",
-      "translation": "card.charta.diamonds.queen"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:diamonds",
-          "charta:rank": "charta:king",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:standard/diamonds_king",
-      "translation": "card.charta.diamonds.king"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:diamonds",
-          "charta:rank": "charta:ace",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:standard/diamonds_ace",
-      "translation": "card.charta.diamonds.ace"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:diamonds",
-          "charta:rank": "charta:two",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:standard/diamonds_two",
-      "translation": "card.charta.diamonds.two"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:diamonds",
-          "charta:rank": "charta:three",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:standard/diamonds_three",
-      "translation": "card.charta.diamonds.three"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:diamonds",
-          "charta:rank": "charta:four",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:standard/diamonds_four",
-      "translation": "card.charta.diamonds.four"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:clubs",
-          "charta:rank": "charta:five",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:standard/clubs_five",
-      "translation": "card.charta.clubs.five"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:clubs",
-          "charta:rank": "charta:six",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:standard/clubs_six",
-      "translation": "card.charta.clubs.six"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:clubs",
-          "charta:rank": "charta:seven",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:standard/clubs_seven",
-      "translation": "card.charta.clubs.seven"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:clubs",
-          "charta:rank": "charta:eight",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:standard/clubs_eight",
-      "translation": "card.charta.clubs.eight"
+      "texture": "charta:standard/spades_eight",
+      "translation": "card.charta.spades.eight"
     },
     {
       "card": {
@@ -455,145 +268,332 @@
     {
       "card": {
         "components": {
-          "charta:suit": "charta:spades",
+          "charta:suit": "charta:clubs",
           "charta:rank": "charta:five",
           "charta:flipped": false
         }
       },
-      "texture": "charta:standard/spades_five",
-      "translation": "card.charta.spades.five"
+      "texture": "charta:standard/clubs_five",
+      "translation": "card.charta.clubs.five"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:spades",
+          "charta:suit": "charta:clubs",
           "charta:rank": "charta:six",
           "charta:flipped": false
         }
       },
-      "texture": "charta:standard/spades_six",
-      "translation": "card.charta.spades.six"
+      "texture": "charta:standard/clubs_six",
+      "translation": "card.charta.clubs.six"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:spades",
+          "charta:suit": "charta:clubs",
           "charta:rank": "charta:seven",
           "charta:flipped": false
         }
       },
-      "texture": "charta:standard/spades_seven",
-      "translation": "card.charta.spades.seven"
+      "texture": "charta:standard/clubs_seven",
+      "translation": "card.charta.clubs.seven"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:spades",
+          "charta:suit": "charta:clubs",
           "charta:rank": "charta:eight",
           "charta:flipped": false
         }
       },
-      "texture": "charta:standard/spades_eight",
-      "translation": "card.charta.spades.eight"
+      "texture": "charta:standard/clubs_eight",
+      "translation": "card.charta.clubs.eight"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:spades",
+          "charta:suit": "charta:hearts",
           "charta:rank": "charta:nine",
           "charta:flipped": false
         }
       },
-      "texture": "charta:standard/spades_nine",
-      "translation": "card.charta.spades.nine"
+      "texture": "charta:standard/hearts_nine",
+      "translation": "card.charta.hearts.nine"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:spades",
+          "charta:suit": "charta:hearts",
           "charta:rank": "charta:ten",
           "charta:flipped": false
         }
       },
-      "texture": "charta:standard/spades_ten",
-      "translation": "card.charta.spades.ten"
+      "texture": "charta:standard/hearts_ten",
+      "translation": "card.charta.hearts.ten"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:spades",
+          "charta:suit": "charta:hearts",
           "charta:rank": "charta:jack",
           "charta:flipped": false
         }
       },
-      "texture": "charta:standard/spades_jack",
-      "translation": "card.charta.spades.jack"
+      "texture": "charta:standard/hearts_jack",
+      "translation": "card.charta.hearts.jack"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:spades",
+          "charta:suit": "charta:hearts",
           "charta:rank": "charta:queen",
           "charta:flipped": false
         }
       },
-      "texture": "charta:standard/spades_queen",
-      "translation": "card.charta.spades.queen"
+      "texture": "charta:standard/hearts_queen",
+      "translation": "card.charta.hearts.queen"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:spades",
+          "charta:suit": "charta:hearts",
           "charta:rank": "charta:king",
           "charta:flipped": false
         }
       },
-      "texture": "charta:standard/spades_king",
-      "translation": "card.charta.spades.king"
+      "texture": "charta:standard/hearts_king",
+      "translation": "card.charta.hearts.king"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:spades",
+          "charta:suit": "charta:hearts",
           "charta:rank": "charta:ace",
           "charta:flipped": false
         }
       },
-      "texture": "charta:standard/spades_ace",
-      "translation": "card.charta.spades.ace"
+      "texture": "charta:standard/hearts_ace",
+      "translation": "card.charta.hearts.ace"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:spades",
+          "charta:suit": "charta:hearts",
           "charta:rank": "charta:two",
           "charta:flipped": false
         }
       },
-      "texture": "charta:standard/spades_two",
-      "translation": "card.charta.spades.two"
+      "texture": "charta:standard/hearts_two",
+      "translation": "card.charta.hearts.two"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:spades",
+          "charta:suit": "charta:hearts",
           "charta:rank": "charta:three",
           "charta:flipped": false
         }
       },
-      "texture": "charta:standard/spades_three",
-      "translation": "card.charta.spades.three"
+      "texture": "charta:standard/hearts_three",
+      "translation": "card.charta.hearts.three"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:spades",
+          "charta:suit": "charta:hearts",
           "charta:rank": "charta:four",
           "charta:flipped": false
         }
       },
-      "texture": "charta:standard/spades_four",
-      "translation": "card.charta.spades.four"
+      "texture": "charta:standard/hearts_four",
+      "translation": "card.charta.hearts.four"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:hearts",
+          "charta:rank": "charta:five",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:standard/hearts_five",
+      "translation": "card.charta.hearts.five"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:hearts",
+          "charta:rank": "charta:six",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:standard/hearts_six",
+      "translation": "card.charta.hearts.six"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:hearts",
+          "charta:rank": "charta:seven",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:standard/hearts_seven",
+      "translation": "card.charta.hearts.seven"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:hearts",
+          "charta:rank": "charta:eight",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:standard/hearts_eight",
+      "translation": "card.charta.hearts.eight"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:diamonds",
+          "charta:rank": "charta:nine",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:standard/diamonds_nine",
+      "translation": "card.charta.diamonds.nine"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:diamonds",
+          "charta:rank": "charta:ten",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:standard/diamonds_ten",
+      "translation": "card.charta.diamonds.ten"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:diamonds",
+          "charta:rank": "charta:jack",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:standard/diamonds_jack",
+      "translation": "card.charta.diamonds.jack"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:diamonds",
+          "charta:rank": "charta:queen",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:standard/diamonds_queen",
+      "translation": "card.charta.diamonds.queen"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:diamonds",
+          "charta:rank": "charta:king",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:standard/diamonds_king",
+      "translation": "card.charta.diamonds.king"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:diamonds",
+          "charta:rank": "charta:ace",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:standard/diamonds_ace",
+      "translation": "card.charta.diamonds.ace"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:diamonds",
+          "charta:rank": "charta:two",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:standard/diamonds_two",
+      "translation": "card.charta.diamonds.two"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:diamonds",
+          "charta:rank": "charta:three",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:standard/diamonds_three",
+      "translation": "card.charta.diamonds.three"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:diamonds",
+          "charta:rank": "charta:four",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:standard/diamonds_four",
+      "translation": "card.charta.diamonds.four"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:diamonds",
+          "charta:rank": "charta:five",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:standard/diamonds_five",
+      "translation": "card.charta.diamonds.five"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:diamonds",
+          "charta:rank": "charta:six",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:standard/diamonds_six",
+      "translation": "card.charta.diamonds.six"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:diamonds",
+          "charta:rank": "charta:seven",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:standard/diamonds_seven",
+      "translation": "card.charta.diamonds.seven"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:diamonds",
+          "charta:rank": "charta:eight",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:standard/diamonds_eight",
+      "translation": "card.charta.diamonds.eight"
     }
   ],
   "rarity": "common",
