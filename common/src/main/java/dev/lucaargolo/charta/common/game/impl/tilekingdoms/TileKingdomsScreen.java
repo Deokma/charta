@@ -72,11 +72,8 @@ public class TileKingdomsScreen extends GameScreen<TileKingdomsGame, TileKingdom
     // ── renderBg ──────────────────────────────────────────────────────────────
     @Override
     protected void renderBg(@NotNull GuiGraphics g, float pt, int mx, int my) {
-        // Top bar
-        g.fill(leftPos, topPos, leftPos+imageWidth, topPos+TOP_BAR, C_BAR);
-        g.fill(leftPos, topPos+TOP_BAR-1, leftPos+imageWidth, topPos+TOP_BAR, 0xFF445544);
-        // Board bg
-        g.fill(leftPos, topPos+TOP_BAR, leftPos+imageWidth, topPos+imageHeight, 0xFF1B2A1B);
+        // Full-screen background — no separator line
+        g.fill(0, 0, width, height, 0xFF1B2A1B);
 
         short[] grid    = menu.getBoardGrid();
         int[]   claims  = menu.getClaimsArray();
@@ -297,15 +294,14 @@ public class TileKingdomsScreen extends GameScreen<TileKingdomsGame, TileKingdom
 
     // ── Followers on tiles ────────────────────────────────────────────────────
     private void drawFollowersOnTile(GuiGraphics g, int sx, int sy, int lx, int ly, int[] claims) {
-        for(int c:claims) {
-            int[] p=TileKingdomsGame.unpackClaimInt(c);
-            if(p[0]==lx&&p[1]==ly) {
-                int col=p[3]<P_COL.length?P_COL[p[3]]:0xFFFFFFFF;
-                int[] fp=featurePt(sx,sy,p[2]);
-                // Meeple: small filled circle (5×5 with corners cut)
-                g.fill(fp[0]-3,fp[1]-2,fp[0]+3,fp[1]+2,0xFF000000);
-                g.fill(fp[0]-2,fp[1]-3,fp[0]+2,fp[1]+3,0xFF000000);
-                g.fill(fp[0]-2,fp[1]-2,fp[0]+2,fp[1]+2,col);
+        for (int c : claims) {
+            int[] p = TileKingdomsGame.unpackClaimInt(c);
+            if (p[0]==lx && p[1]==ly) {
+                int col = p[3] < P_COL.length ? P_COL[p[3]] : 0xFFFFFFFF;
+                int[] fp = featurePt(sx, sy, p[2]);
+                // Simple dot: outline + fill
+                g.fill(fp[0]-3, fp[1]-3, fp[0]+3, fp[1]+3, 0xFF000000);
+                g.fill(fp[0]-2, fp[1]-2, fp[0]+2, fp[1]+2, col);
             }
         }
     }
@@ -392,57 +388,63 @@ public class TileKingdomsScreen extends GameScreen<TileKingdomsGame, TileKingdom
         // We need screen-space coords for board messages; convert using leftPos/topPos offset
         int phase = menu.getPhase();
         boolean myTurn = isMyTurn();
-        // Status message near bottom of board area (above bottom bar)
-        // In menu-local coords: board bottom = imageHeight (or use height-topPos-BOTTOM_BAR)
-        int msgY = imageHeight - 12;
+        // ── Bottom bar content ────────────────────────────────────────────────
+        // renderLabels draws in menu-local coords; bottom bar is at imageHeight onwards
+        int barY = imageHeight + 4; // inside the bottom bar (rendered below the menu image)
+
+        // Left: tile count
+        String rem = menu.getRemainingTiles() + " tiles in deck";
+        g.drawString(font, rem, 8, barY + 4, 0xFFAAAAAA, false);
+
+        // Centre: phase hint
         if (phase == TileKingdomsGame.PHASE_CLAIM && myTurn) {
-            String msg = "Place follower (+) or Skip";
-            g.fill(imageWidth/2-font.width(msg)/2-3, msgY-2, imageWidth/2+font.width(msg)/2+3, msgY+10, 0xBB000000);
-            g.drawString(font, msg, imageWidth/2-font.width(msg)/2, msgY, 0xFFFFDD00, false);
+            String msg = "Click + to place follower • Skip to pass";
+            g.drawString(font, msg, imageWidth/2 - font.width(msg)/2, barY + 4, 0xFFFFDD00, false);
         } else if (phase == TileKingdomsGame.PHASE_PLACE && myTurn && menu.getCurrentTile() != null) {
-            String msg = "Click green to place, right-drag to pan";
-            g.fill(imageWidth/2-font.width(msg)/2-3, msgY-2, imageWidth/2+font.width(msg)/2+3, msgY+10, 0xBB000000);
-            g.drawString(font, msg, imageWidth/2-font.width(msg)/2, msgY, 0xFF88FF88, false);
+            String tileName = menu.getCurrentTile().name().replace('_', ' ').toLowerCase();
+            g.drawString(font, "Placing: " + tileName, imageWidth/2 - font.width("Placing: " + tileName)/2, barY + 4, 0xFF88FF88, false);
+        } else if (!myTurn) {
+            java.util.List<dev.lucaargolo.charta.common.game.api.CardPlayer> pl = menu.getGame().getPlayers();
+            int ci = menu.getCurrentPlayerIdx();
+            if (ci >= 0 && ci < pl.size()) {
+                String msg = "Waiting for " + pl.get(ci).getName().getString() + "…";
+                g.drawString(font, msg, imageWidth/2 - font.width(msg)/2, barY + 4, 0xFF888888, false);
+            }
         }
     }
 
     // ── Game over overlay ─────────────────────────────────────────────────────
     private void drawGameOverOverlay(net.minecraft.client.gui.GuiGraphics g) {
         java.util.List<dev.lucaargolo.charta.common.game.api.CardPlayer> players = menu.getGame().getPlayers();
-        int n = players.size();
-        int winnerIdx = menu.getWinnerIdx();
-
-        // Semi-transparent dark panel in the centre of the board
-        int panelW = 200, panelH = 30 + n * 14 + 20;
-        int px = width/2 - panelW/2, py = boardTop() + boardH/2 - panelH/2;
-        g.fill(px-4, py-4, px+panelW+4, py+panelH+4, 0xEE000000);
-        g.fill(px-3, py-3, px+panelW+3, py+panelH+3, 0xBB111122);
-
-        // Title
-        String title = "♛ Game Over ♛";
-        g.drawString(font, title, px+panelW/2 - font.width(title)/2, py+6, 0xFFFFD700, true);
-
-        // Winner banner
-        if (winnerIdx >= 0 && winnerIdx < players.size()) {
-            String wname = players.get(winnerIdx).getName().getString();
-            int wcol = winnerIdx < P_COL.length ? P_COL[winnerIdx] : 0xFFFFFFFF;
-            String winner = "Winner: " + wname + " (" + menu.getScore(winnerIdx) + "pt)";
-            g.fill(px+4, py+16, px+panelW-4, py+27, 0x44FFFFFF);
-            g.drawString(font, winner, px+panelW/2-font.width(winner)/2, py+18, wcol, true);
+        int n = players.size(); int winnerIdx = menu.getWinnerIdx();
+        // Panel capped within board area — no bigger than needed
+        int panelW = Math.min(210, width - 40), panelH = 36 + n * 13 + 16;
+        int px = width/2 - panelW/2;
+        int py = Math.max(boardTop()+4, Math.min(boardTop()+boardH/2-panelH/2, boardTop()+boardH-panelH-4));
+        g.fill(px-2,py-2,px+panelW+2,py+panelH+2,0xFF222244);
+        g.fill(px,py,px+panelW,py+panelH,0xEE0D0D1A);
+        g.fill(px,py,px+panelW,py+13,0xFF1A1A3A);
+        String title="♛  Game Over  ♛";
+        g.drawString(font,title,px+panelW/2-font.width(title)/2,py+3,0xFFFFD700,true);
+        int cy=py+17;
+        if(winnerIdx>=0&&winnerIdx<players.size()){
+            int wcol=winnerIdx<P_COL.length?P_COL[winnerIdx]:0xFFFFFFFF;
+            String wname=players.get(winnerIdx).getName().getString();
+            String winner="🏆 "+wname+"  "+menu.getScore(winnerIdx)+"pt";
+            g.fill(px+2,cy,px+panelW-2,cy+12,0x33FFFFFF);
+            g.drawString(font,winner,px+panelW/2-font.width(winner)/2,cy+2,wcol,true);
+            cy+=14;
         }
-
-        // All scores
-        for (int i = 0; i < n; i++) {
-            int col = i < P_COL.length ? P_COL[i] : 0xFFFFFFFF;
-            String name = players.get(i).getName().getString();
-            if (name.length() > 12) name = name.substring(0, 11) + ".";
-            String line = (i == winnerIdx ? "★ " : "  ") + name + ":  " + menu.getScore(i) + " pts";
-            g.drawString(font, line, px+10, py+30+i*14, col, false);
+        for(int i=0;i<n;i++){
+            int col=i<P_COL.length?P_COL[i]:0xFFFFFFFF;
+            g.fill(px+6,cy+2,px+12,cy+8,col);
+            String nm=players.get(i).getName().getString();
+            if(nm.length()>11)nm=nm.substring(0,10)+".";
+            g.drawString(font,nm+"  "+menu.getScore(i)+"pt",px+16,cy+1,i==winnerIdx?0xFFFFFFFF:0xFFAAAAAA,false);
+            cy+=13;
         }
-
-        // View map instruction
-        String hint = "You can look around the map";
-        g.drawString(font, hint, px+panelW/2-font.width(hint)/2, py+panelH-10, 0xFF888888, false);
+        String hint="Right-drag to explore";
+        g.drawString(font,hint,px+panelW/2-font.width(hint)/2,py+panelH-8,0xFF555566,false);
     }
 
 

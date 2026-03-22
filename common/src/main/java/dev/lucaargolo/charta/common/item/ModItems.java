@@ -34,5 +34,6 @@ public class ModItems {
 
     public static final ModItemRegistry.ItemEntry<DeckItem> DECK = REGISTRY.register("deck", () -> new DeckItem(new Item.Properties().stacksTo(1)));
     public static final ModItemRegistry.ItemEntry<LeadItem> IRON_LEAD = REGISTRY.register("iron_lead", () -> new LeadItem(new Item.Properties()));
+    public static final ModItemRegistry.ItemEntry<TileKingdomsBoxItem> TILE_KINGDOMS_BOX = REGISTRY.register("tile_kingdoms_box", () -> new TileKingdomsBoxItem(new Item.Properties().stacksTo(1)));
 
 }
