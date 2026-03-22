@@ -27,50 +27,6 @@
       "card": {
         "components": {
           "charta:suit": "charta:spades",
-          "charta:rank": "charta:five",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:gems/sapphire/spades_five",
-      "translation": "card.charta.spades.five"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:spades",
-          "charta:rank": "charta:six",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:gems/sapphire/spades_six",
-      "translation": "card.charta.spades.six"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:spades",
-          "charta:rank": "charta:seven",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:gems/sapphire/spades_seven",
-      "translation": "card.charta.spades.seven"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:spades",
-          "charta:rank": "charta:eight",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:gems/sapphire/spades_eight",
-      "translation": "card.charta.spades.eight"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:spades",
           "charta:rank": "charta:nine",
           "charta:flipped": false
         }
@@ -169,189 +125,46 @@
     {
       "card": {
         "components": {
-          "charta:suit": "charta:diamonds",
+          "charta:suit": "charta:spades",
           "charta:rank": "charta:five",
           "charta:flipped": false
         }
       },
-      "texture": "charta:gems/sapphire/diamonds_five",
-      "translation": "card.charta.diamonds.five"
+      "texture": "charta:gems/sapphire/spades_five",
+      "translation": "card.charta.spades.five"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:diamonds",
+          "charta:suit": "charta:spades",
           "charta:rank": "charta:six",
           "charta:flipped": false
         }
       },
-      "texture": "charta:gems/sapphire/diamonds_six",
-      "translation": "card.charta.diamonds.six"
+      "texture": "charta:gems/sapphire/spades_six",
+      "translation": "card.charta.spades.six"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:diamonds",
+          "charta:suit": "charta:spades",
           "charta:rank": "charta:seven",
           "charta:flipped": false
         }
       },
-      "texture": "charta:gems/sapphire/diamonds_seven",
-      "translation": "card.charta.diamonds.seven"
+      "texture": "charta:gems/sapphire/spades_seven",
+      "translation": "card.charta.spades.seven"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:diamonds",
+          "charta:suit": "charta:spades",
           "charta:rank": "charta:eight",
           "charta:flipped": false
         }
       },
-      "texture": "charta:gems/sapphire/diamonds_eight",
-      "translation": "card.charta.diamonds.eight"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:diamonds",
-          "charta:rank": "charta:nine",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:gems/sapphire/diamonds_nine",
-      "translation": "card.charta.diamonds.nine"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:diamonds",
-          "charta:rank": "charta:ten",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:gems/sapphire/diamonds_ten",
-      "translation": "card.charta.diamonds.ten"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:diamonds",
-          "charta:rank": "charta:jack",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:gems/sapphire/diamonds_jack",
-      "translation": "card.charta.diamonds.jack"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:diamonds",
-          "charta:rank": "charta:queen",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:gems/sapphire/diamonds_queen",
-      "translation": "card.charta.diamonds.queen"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:diamonds",
-          "charta:rank": "charta:king",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:gems/sapphire/diamonds_king",
-      "translation": "card.charta.diamonds.king"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:diamonds",
-          "charta:rank": "charta:ace",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:gems/sapphire/diamonds_ace",
-      "translation": "card.charta.diamonds.ace"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:diamonds",
-          "charta:rank": "charta:two",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:gems/sapphire/diamonds_two",
-      "translation": "card.charta.diamonds.two"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:diamonds",
-          "charta:rank": "charta:three",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:gems/sapphire/diamonds_three",
-      "translation": "card.charta.diamonds.three"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:diamonds",
-          "charta:rank": "charta:four",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:gems/sapphire/diamonds_four",
-      "translation": "card.charta.diamonds.four"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:clubs",
-          "charta:rank": "charta:five",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:gems/sapphire/clubs_five",
-      "translation": "card.charta.clubs.five"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:clubs",
-          "charta:rank": "charta:six",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:gems/sapphire/clubs_six",
-      "translation": "card.charta.clubs.six"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:clubs",
-          "charta:rank": "charta:seven",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:gems/sapphire/clubs_seven",
-      "translation": "card.charta.clubs.seven"
-    },
-    {
-      "card": {
-        "components": {
-          "charta:suit": "charta:clubs",
-          "charta:rank": "charta:eight",
-          "charta:flipped": false
-        }
-      },
-      "texture": "charta:gems/sapphire/clubs_eight",
-      "translation": "card.charta.clubs.eight"
+      "texture": "charta:gems/sapphire/spades_eight",
+      "translation": "card.charta.spades.eight"
     },
     {
       "card": {
@@ -455,46 +268,46 @@
     {
       "card": {
         "components": {
-          "charta:suit": "charta:hearts",
+          "charta:suit": "charta:clubs",
           "charta:rank": "charta:five",
           "charta:flipped": false
         }
       },
-      "texture": "charta:gems/sapphire/hearts_five",
-      "translation": "card.charta.hearts.five"
+      "texture": "charta:gems/sapphire/clubs_five",
+      "translation": "card.charta.clubs.five"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:hearts",
+          "charta:suit": "charta:clubs",
           "charta:rank": "charta:six",
           "charta:flipped": false
         }
       },
-      "texture": "charta:gems/sapphire/hearts_six",
-      "translation": "card.charta.hearts.six"
+      "texture": "charta:gems/sapphire/clubs_six",
+      "translation": "card.charta.clubs.six"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:hearts",
+          "charta:suit": "charta:clubs",
           "charta:rank": "charta:seven",
           "charta:flipped": false
         }
       },
-      "texture": "charta:gems/sapphire/hearts_seven",
-      "translation": "card.charta.hearts.seven"
+      "texture": "charta:gems/sapphire/clubs_seven",
+      "translation": "card.charta.clubs.seven"
     },
     {
       "card": {
         "components": {
-          "charta:suit": "charta:hearts",
+          "charta:suit": "charta:clubs",
           "charta:rank": "charta:eight",
           "charta:flipped": false
         }
       },
-      "texture": "charta:gems/sapphire/hearts_eight",
-      "translation": "card.charta.hearts.eight"
+      "texture": "charta:gems/sapphire/clubs_eight",
+      "translation": "card.charta.clubs.eight"
     },
     {
       "card": {
@@ -594,6 +407,193 @@
       },
       "texture": "charta:gems/sapphire/hearts_four",
       "translation": "card.charta.hearts.four"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:hearts",
+          "charta:rank": "charta:five",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:gems/sapphire/hearts_five",
+      "translation": "card.charta.hearts.five"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:hearts",
+          "charta:rank": "charta:six",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:gems/sapphire/hearts_six",
+      "translation": "card.charta.hearts.six"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:hearts",
+          "charta:rank": "charta:seven",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:gems/sapphire/hearts_seven",
+      "translation": "card.charta.hearts.seven"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:hearts",
+          "charta:rank": "charta:eight",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:gems/sapphire/hearts_eight",
+      "translation": "card.charta.hearts.eight"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:diamonds",
+          "charta:rank": "charta:nine",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:gems/sapphire/diamonds_nine",
+      "translation": "card.charta.diamonds.nine"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:diamonds",
+          "charta:rank": "charta:ten",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:gems/sapphire/diamonds_ten",
+      "translation": "card.charta.diamonds.ten"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:diamonds",
+          "charta:rank": "charta:jack",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:gems/sapphire/diamonds_jack",
+      "translation": "card.charta.diamonds.jack"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:diamonds",
+          "charta:rank": "charta:queen",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:gems/sapphire/diamonds_queen",
+      "translation": "card.charta.diamonds.queen"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:diamonds",
+          "charta:rank": "charta:king",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:gems/sapphire/diamonds_king",
+      "translation": "card.charta.diamonds.king"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:diamonds",
+          "charta:rank": "charta:ace",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:gems/sapphire/diamonds_ace",
+      "translation": "card.charta.diamonds.ace"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:diamonds",
+          "charta:rank": "charta:two",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:gems/sapphire/diamonds_two",
+      "translation": "card.charta.diamonds.two"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:diamonds",
+          "charta:rank": "charta:three",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:gems/sapphire/diamonds_three",
+      "translation": "card.charta.diamonds.three"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:diamonds",
+          "charta:rank": "charta:four",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:gems/sapphire/diamonds_four",
+      "translation": "card.charta.diamonds.four"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:diamonds",
+          "charta:rank": "charta:five",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:gems/sapphire/diamonds_five",
+      "translation": "card.charta.diamonds.five"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:diamonds",
+          "charta:rank": "charta:six",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:gems/sapphire/diamonds_six",
+      "translation": "card.charta.diamonds.six"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:diamonds",
+          "charta:rank": "charta:seven",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:gems/sapphire/diamonds_seven",
+      "translation": "card.charta.diamonds.seven"
+    },
+    {
+      "card": {
+        "components": {
+          "charta:suit": "charta:diamonds",
+          "charta:rank": "charta:eight",
+          "charta:flipped": false
+        }
+      },
+      "texture": "charta:gems/sapphire/diamonds_eight",
+      "translation": "card.charta.diamonds.eight"
     }
   ],
   "rarity": "rare",

@@ -11,7 +11,7 @@ import dev.lucaargolo.charta.common.ChartaMod;
 import dev.lucaargolo.charta.common.block.entity.ModBlockEntityTypes;
 import dev.lucaargolo.charta.common.entity.ModEntityTypes;
 import dev.lucaargolo.charta.common.game.impl.crazyeights.CrazyEightsScreen;
-//import dev.lucaargolo.charta.common.game.impl.blackjack.BlackjackScreen;
+import dev.lucaargolo.charta.common.game.impl.blackjack.BlackjackScreen;
 import dev.lucaargolo.charta.common.game.impl.fun.FunScreen;
 import dev.lucaargolo.charta.common.game.impl.solitaire.SolitaireScreen;
 import dev.lucaargolo.charta.common.game.impl.texasholdem.TexasHoldemScreen;
@@ -111,15 +111,10 @@ public abstract class ChartaModClient {
         this.registerBlockEntityRenderer(ModBlockEntityTypes.BAR_SHELF, BarShelfBlockEntityRenderer::new);
 
         this.registerMenuScreen(ModMenuTypes.CRAZY_EIGHTS, CrazyEightsScreen::new);
-        //this.registerMenuScreen(ModMenuTypes.BLACKJACK, BlackjackScreen::new);
+        this.registerMenuScreen(ModMenuTypes.BLACKJACK, BlackjackScreen::new);
         this.registerMenuScreen(ModMenuTypes.FUN, FunScreen::new);
         this.registerMenuScreen(ModMenuTypes.SOLITAIRE, SolitaireScreen::new);
         this.registerMenuScreen(ModMenuTypes.TEXAS_HOLDEM, TexasHoldemScreen::new);
-        this.registerMenuScreen(ModMenuTypes.TILE_KINGDOMS, dev.lucaargolo.charta.common.game.impl.tilekingdoms.TileKingdomsScreen::new);
-        dev.lucaargolo.charta.common.item.TileKingdomsBoxItem.TILE_VIEWER_OPENER = () -> {
-            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
-            mc.setScreen(new dev.lucaargolo.charta.common.game.impl.tilekingdoms.TileViewerScreen(mc.screen));
-        };
 
         this.registerAdditionalModel(ChartaMod.id("deck"));
         this.registerDynamicItemRenderer(ModItems.DECK, DeckItemRenderer::new);

@@ -30,7 +30,7 @@ public abstract class ModPacketManager {
         register(PacketInfo.PLAY_TO_SERVER, dev.lucaargolo.charta.common.game.impl.tilekingdoms.TileKingdomsActionPayload.class);
         register(PacketInfo.PLAY_TO_BOTH, PlayerOptionsPayload.class);
         register(PacketInfo.PLAY_TO_BOTH, GameLeavePayload.class);
-        //register(PacketInfo.PLAY_TO_SERVER, BlackjackActionPayload.class);
+        register(PacketInfo.PLAY_TO_SERVER, BlackjackActionPayload.class);
         register(PacketInfo.PLAY_TO_SERVER, TexasHoldemActionPayload.class);
         register(PacketInfo.PLAY_TO_CLIENT, TexasHoldemChipsPayload.class);
     }

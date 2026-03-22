@@ -418,6 +418,27 @@ public class CardTableBlockEntity extends BlockEntity {
                                 }
                                 shouldEnd = false;
                             }
+                        } else if (game instanceof dev.lucaargolo.charta.common.game.impl.blackjack.BlackjackGame bjGame) {
+                            List<dev.lucaargolo.charta.common.game.api.CardPlayer> gamePlayers = game.getPlayers();
+                            // Count players still seated AND with chips
+                            int remainingActive = 0;
+                            for (int i = 0; i < gamePlayers.size(); i++) {
+                                if (currentPlayers.contains(gamePlayers.get(i)) && bjGame.chips[i] > 0) remainingActive++;
+                            }
+                            if (remainingActive >= game.getMinPlayers()) {
+                                for (int i = 0; i < gamePlayers.size(); i++) {
+                                    if (!currentPlayers.contains(gamePlayers.get(i))
+                                            && !bjGame.notifiedLeavers.contains(i)) {
+                                        bjGame.notifiedLeavers.add(i);
+                                        int leftChips = bjGame.chips[i]; // save before onPlayerLeft zeroes it
+                                        bjGame.onPlayerLeft(i);
+                                        gamePlayers.get(i).sendTitle(
+                                                net.minecraft.network.chat.Component.literal("You left the table").withStyle(net.minecraft.ChatFormatting.YELLOW),
+                                                net.minecraft.network.chat.Component.literal("Chips remaining: " + leftChips + "♦").withStyle(net.minecraft.ChatFormatting.WHITE));
+                                    }
+                                }
+                                shouldEnd = false;
+                            }
                         }
                         if (shouldEnd) game.endGame();
                     }
