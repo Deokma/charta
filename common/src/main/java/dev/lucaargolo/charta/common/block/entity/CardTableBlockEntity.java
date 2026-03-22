@@ -395,6 +395,17 @@ public class CardTableBlockEntity extends BlockEntity {
         }
         if(blockEntity.game != null) {
             Game<?, ?> game = blockEntity.game;
+            // Push board data for TileKingdoms games to all players with the menu open
+            if (game instanceof dev.lucaargolo.charta.common.game.impl.tilekingdoms.TileKingdomsGame) {
+                for (net.minecraft.server.level.ServerPlayer sp : ((ServerLevel) level).players()) {
+                    if (sp.containerMenu instanceof dev.lucaargolo.charta.common.game.impl.tilekingdoms.TileKingdomsMenu tkMenu) {
+                        dev.lucaargolo.charta.common.game.impl.tilekingdoms.TileKingdomsBoardPayload payload = tkMenu.pollBoardPayload();
+                        if (payload != null) {
+                            ChartaMod.getPacketManager().sendToPlayer(sp, payload);
+                        }
+                    }
+                }
+            }
             if(!game.isGameOver()) {
                 if (blockEntity.age++ % 100 == 0 || blockEntity.playersDirty) {
                     List<CardPlayer> currentPlayers = blockEntity.getOrderedPlayers();

@@ -22,6 +22,7 @@ public class TileKingdomsScreen extends GameScreen<TileKingdomsGame, TileKingdom
 
     // Camera
     private float camX = 0f, camY = 0f;
+    private float zoom = 1.0f; // 0.35 .. 2.5, Ctrl+scroll
     private double dragStartMX, dragStartMY;
     private float dragStartCamX, dragStartCamY;
     private boolean dragging = false;
@@ -56,10 +57,11 @@ public class TileKingdomsScreen extends GameScreen<TileKingdomsGame, TileKingdom
     // Board starts at screen y = TOP_BAR, width=full, height=height-TOP_BAR-BOTTOM_BAR
     private int boardTop()  { return TOP_BAR; }           // screen y where board starts
     private int boardLeft() { return 0; }                 // screen x where board starts
-    private int tileScreenX(int lx) { return boardLeft() + boardW/2 + Math.round((lx - camX) * CELL); }
-    private int tileScreenY(int ly) { return boardTop()  + boardH/2 + Math.round((ly - camY) * CELL); }
-    private int screenToTileX(double sx) { return (int)Math.floor((sx - boardLeft() - boardW/2.0) / CELL + camX); }
-    private int screenToTileY(double sy) { return (int)Math.floor((sy - boardTop()  - boardH/2.0) / CELL + camY); }
+    private int cs()             { return Math.max(8, Math.round(CELL * zoom)); }
+    private int tileScreenX(int lx) { return boardLeft() + boardW/2 + Math.round((lx - camX) * cs()); }
+    private int tileScreenY(int ly) { return boardTop()  + boardH/2 + Math.round((ly - camY) * cs()); }
+    private int screenToTileX(double sx) { return (int)Math.floor((sx - boardLeft() - boardW/2.0) / cs() + camX); }
+    private int screenToTileY(double sy) { return (int)Math.floor((sy - boardTop()  - boardH/2.0) / cs() + camY); }
 
     @Override
     protected void init() {
@@ -73,7 +75,8 @@ public class TileKingdomsScreen extends GameScreen<TileKingdomsGame, TileKingdom
     @Override
     protected void renderBg(@NotNull GuiGraphics g, float pt, int mx, int my) {
         // Full-screen background — no separator line
-        g.fill(0, 0, width, height, 0xFF1B2A1B);
+        // Background only below topBar so player heads remain visible
+        g.fill(0, TOP_BAR, width, height - BOTTOM_BAR, 0xFF1B2A1B);
 
         short[] grid    = menu.getBoardGrid();
         int[]   claims  = menu.getClaimsArray();
@@ -83,32 +86,32 @@ public class TileKingdomsScreen extends GameScreen<TileKingdomsGame, TileKingdom
         int     phase   = menu.getPhase();
 
         // ── Full-screen background grid ──────────────────────────────────────
-        for (int gx = (int)Math.floor(camX - boardW/2.0/CELL) - 1; gx <= camX + boardW/2.0/CELL + 1; gx++) {
+        for (int gx = (int)Math.floor(camX - boardW/2.0/cs()) - 1; gx <= camX + boardW/2.0/cs() + 1; gx++) {
             int sx = tileScreenX(gx);
             if (sx >= 0 && sx < width) g.fill(sx, boardTop(), sx+1, height-BOTTOM_BAR, 0x11FFFFFF);
         }
-        for (int gy = (int)Math.floor(camY - boardH/2.0/CELL) - 1; gy <= camY + boardH/2.0/CELL + 1; gy++) {
+        for (int gy = (int)Math.floor(camY - boardH/2.0/cs()) - 1; gy <= camY + boardH/2.0/cs() + 1; gy++) {
             int sy = tileScreenY(gy);
             if (sy >= boardTop() && sy < height-BOTTOM_BAR) g.fill(0, sy, width, sy+1, 0x11FFFFFF);
         }
 
         // ── Tiles & valid hints ──────────────────────────────────────────────
+        int csz = cs();
         for (int gy=0; gy<TileKingdomsBoard.SIZE; gy++) {
             for (int gx=0; gx<TileKingdomsBoard.SIZE; gx++) {
                 int lx=gx-TileKingdomsBoard.HALF, ly=gy-TileKingdomsBoard.HALF;
                 int sx=tileScreenX(lx), sy=tileScreenY(ly);
-                if(sx+CELL<leftPos||sx>leftPos+boardW||sy+CELL<topPos+TOP_BAR||sy>topPos+imageHeight) continue;
+                if(sx+csz<leftPos||sx>leftPos+boardW||sy+csz<topPos+TOP_BAR||sy>topPos+imageHeight) continue;
                 short val = grid[gy*TileKingdomsBoard.SIZE+gx];
                 if (!PlacedTile.isEmpty(val)) {
-                    drawTile(g, sx, sy, val);
-                    drawFollowersOnTile(g, sx, sy, lx, ly, claims);
+                    drawTile(g, sx, sy, val, csz);
+                    drawFollowersOnTile(g, sx, sy, lx, ly, claims, csz);
                 } else if (phase==TileKingdomsGame.PHASE_PLACE && myTurn && ct!=null
                         && isValidPlace(grid,lx,ly,ct,rot)) {
-                    g.fill(sx+2,sy+2,sx+CELL-2,sy+CELL-2, C_VALID);
+                    g.fill(sx+2,sy+2,sx+csz-2,sy+csz-2, C_VALID);
                 }
-                // Subtle grid
-                g.fill(sx,sy,sx+CELL,sy+1,0x11FFFFFF);
-                g.fill(sx,sy,sx+1,sy+CELL,0x11FFFFFF);
+                g.fill(sx,sy,sx+csz,sy+1,0x11FFFFFF);
+                g.fill(sx,sy,sx+1,sy+csz,0x11FFFFFF);
             }
         }
 
@@ -118,8 +121,8 @@ public class TileKingdomsScreen extends GameScreen<TileKingdomsGame, TileKingdom
             int hLx=screenToTileX(mx), hLy=screenToTileY(my);
             if (isValidPlace(grid,hLx,hLy,ct,rot)) {
                 int sx=tileScreenX(hLx), sy=tileScreenY(hLy);
-                g.fill(sx+1,sy+1,sx+CELL-1,sy+CELL-1, C_HOVER);
-                drawTileOverlay(g,sx,sy,ct,rot,0xAA);
+                g.fill(sx+1,sy+1,sx+csz-1,sy+csz-1, C_HOVER);
+                drawTileOverlay(g,sx,sy,ct,rot,0xAA,csz);
             }
         }
 
@@ -129,7 +132,7 @@ public class TileKingdomsScreen extends GameScreen<TileKingdomsGame, TileKingdom
 
         // ── Floating current-tile preview (bottom-right corner of board) ─────
         if (ct!=null && myTurn) {
-            int ps=CELL+10;
+            int ps = cs() + 8;
             int px=width-ps-6, py=height-BOTTOM_BAR-ps-20;
             int rbx=px, rby=py+ps+2;
             // Dark bg
@@ -154,20 +157,45 @@ public class TileKingdomsScreen extends GameScreen<TileKingdomsGame, TileKingdom
     }
 
     // ── drawTile: proper continuous road lines ────────────────────────────────
-    private void drawTile(GuiGraphics g, int sx, int sy, short val) {
+    // Texture cache: type name -> ResourceLocation
+    private static final java.util.Map<String, net.minecraft.resources.ResourceLocation> TEX_CACHE = new java.util.HashMap<>();
+    private static net.minecraft.resources.ResourceLocation tileTexLoc(TileType type) {
+        return TEX_CACHE.computeIfAbsent(type.name().toLowerCase(),
+                n -> dev.lucaargolo.charta.common.ChartaMod.id("textures/tilekingdoms/" + n + ".png"));
+    }
+
+    // Draw tile: try PNG texture first, fall back to procedural
+    private void drawTile(GuiGraphics g, int sx, int sy, short val) { drawTile(g, sx, sy, val, cs()); }
+    private void drawTile(GuiGraphics g, int sx, int sy, short val, int C) {
         TileType type = PlacedTile.typeOf(val);
         if (type==null) return;
-        boolean checker = ((sx/CELL + (sy-TOP_BAR)/CELL) & 1)==0;
-        g.fill(sx+1,sy+1,sx+CELL-1,sy+CELL-1, checker?C_FIELD:C_FIELD2);
+        int rot = PlacedTile.rotationOf(val);
+        // Try texture first
+        try {
+            net.minecraft.resources.ResourceLocation tex = tileTexLoc(type);
+            g.pose().pushPose();
+            g.pose().translate(sx + C / 2f, sy + C / 2f, 0f);
+            g.pose().mulPose(com.mojang.math.Axis.ZP.rotationDegrees(rot * 90f));
+            g.pose().translate(-C / 2f, -C / 2f, 0f);
+            g.blit(tex, 0, 0, 0, 0, C, C);
+            g.pose().popPose();
+            // Border on top
+            g.fill(sx,sy,sx+C,sy+1,C_BORDER); g.fill(sx,sy+C-1,sx+C,sy+C,C_BORDER);
+            g.fill(sx,sy,sx+1,sy+C,C_BORDER); g.fill(sx+C-1,sy,sx+C,sy+C,C_BORDER);
+            return;
+        } catch (Exception ignored) {}
+        // Fallback: procedural drawing
+        boolean checker = ((sx/C + (sy-TOP_BAR)/C) & 1)==0;
+        g.fill(sx+1,sy+1,sx+C-1,sy+C-1, checker?C_FIELD:C_FIELD2);
 
         // ── City fills (full edge bands) ─────────────────────────────────────
         for (int dir=0;dir<4;dir++) {
-            if (PlacedTile.edgeOf(val,dir)==TileType.Edge.C) drawCityBand(g,sx,sy,dir);
+            if (PlacedTile.edgeOf(val,dir)==TileType.Edge.C) drawCityBand(g,sx,sy,dir,C);
         }
         if (type.connectedCity) {
             // Fill interior for multi-edge city
             int cityN=0; for(int d=0;d<4;d++) if(PlacedTile.edgeOf(val,d)==TileType.Edge.C) cityN++;
-            if(cityN>=2) g.fill(sx+6,sy+6,sx+CELL-6,sy+CELL-6,C_CITY);
+            if(cityN>=2) g.fill(sx+C/4,sy+C/4,sx+3*C/4,sy+3*C/4,C_CITY);
         }
 
         // ── Road lines: draw continuous corridors through the tile ───────────
@@ -178,41 +206,42 @@ public class TileKingdomsScreen extends GameScreen<TileKingdomsGame, TileKingdom
 
         if (roadCount==1 || type==TileType.ROAD_CROSS || type==TileType.ROAD_T) {
             // All roads connect to centre — star/T/single stub
-            for(int d=0;d<4;d++) if(roadExit[d]) drawRoadSegment(g,sx,sy,d,-1);
+            for(int d=0;d<4;d++) if(roadExit[d]) drawRoadSegment(g,sx,sy,d,-1,C);
         } else if (roadCount==2) {
             // Find the two exits and draw a continuous corridor
             int dA=-1,dB=-1;
             for(int d=0;d<4;d++) if(roadExit[d]){if(dA<0)dA=d;else dB=d;}
             if (dA>=0&&dB>=0) {
                 // Straight or curved road — draw both halves meeting at centre
-                drawRoadCorridor(g,sx,sy,dA,dB);
+                drawRoadCorridor(g,sx,sy,dA,dB,C);
             }
         }
 
         // ── Monastery cross ───────────────────────────────────────────────────
         if (type.monastery) {
-            int cx=sx+CELL/2, cy=sy+CELL/2, r=4;
+            int cx=sx+C/2, cy=sy+C/2, r=Math.max(2,C/7);
             g.fill(cx-r,cy-1,cx+r+1,cy+2, C_MON);
             g.fill(cx-1,cy-r,cx+2,cy+r+1, C_MON);
             // Gold orb centre
             g.fill(cx-1,cy-1,cx+2,cy+2,0xFFFFD700);
         }
 
-        // ── Tile border ───────────────────────────────────────────────────────
-        g.fill(sx,sy,sx+CELL,sy+1,C_BORDER);
-        g.fill(sx,sy+CELL-1,sx+CELL,sy+CELL,C_BORDER);
-        g.fill(sx,sy,sx+1,sy+CELL,C_BORDER);
-        g.fill(sx+CELL-1,sy,sx+CELL,sy+CELL,C_BORDER);
+        // ── Tile border
+        g.fill(sx,sy,sx+C,sy+1,C_BORDER);
+        g.fill(sx,sy+C-1,sx+C,sy+C,C_BORDER);
+        g.fill(sx,sy,sx+1,sy+C,C_BORDER);
+        g.fill(sx+C-1,sy,sx+C,sy+C,C_BORDER);
     }
 
     /** Draw a city band (solid fill along one edge). */
-    private void drawCityBand(GuiGraphics g, int sx, int sy, int dir) {
-        int t = CELL/4; // band thickness
+    private void drawCityBand(GuiGraphics g, int sx, int sy, int dir) { drawCityBand(g,sx,sy,dir,cs()); }
+    private void drawCityBand(GuiGraphics g, int sx, int sy, int dir, int C) {
+        int t = C/4; // band thickness
         switch(dir) {
-            case 0 -> g.fill(sx+1, sy+1,   sx+CELL-1, sy+t,        C_CITY2);
-            case 1 -> g.fill(sx+CELL-t, sy+1, sx+CELL-1, sy+CELL-1, C_CITY2);
-            case 2 -> g.fill(sx+1, sy+CELL-t, sx+CELL-1, sy+CELL-1, C_CITY2);
-            case 3 -> g.fill(sx+1, sy+1,   sx+t,        sy+CELL-1, C_CITY2);
+            case 0 -> g.fill(sx+1, sy+1,   sx+C-1, sy+t,    C_CITY2);
+            case 1 -> g.fill(sx+C-t, sy+1, sx+C-1, sy+C-1, C_CITY2);
+            case 2 -> g.fill(sx+1, sy+C-t, sx+C-1, sy+C-1, C_CITY2);
+            case 3 -> g.fill(sx+1, sy+1,   sx+t,   sy+C-1, C_CITY2);
         }
     }
 
@@ -220,18 +249,18 @@ public class TileKingdomsScreen extends GameScreen<TileKingdomsGame, TileKingdom
      * Draw a continuous road corridor between two exits.
      * Uses a 4px wide corridor with a darker border.
      */
-    private void drawRoadCorridor(GuiGraphics g, int sx, int sy, int dA, int dB) {
-        int cx = sx+CELL/2, cy = sy+CELL/2;
-        int hw = 2; // half-width of road strip
+    private void drawRoadCorridor(GuiGraphics g, int sx, int sy, int dA, int dB) { drawRoadCorridor(g,sx,sy,dA,dB,cs()); }
+    private void drawRoadCorridor(GuiGraphics g, int sx, int sy, int dA, int dB, int C) {
+        int cx = sx+C/2, cy = sy+C/2;
+        int hw = Math.max(2, C/9); // half-width of road strip
 
         // Segment A: from edge to centre
-        drawRoadHalf(g, sx, sy, cx, cy, dA, hw);
-        // Segment B: from centre to edge
-        drawRoadHalf(g, sx, sy, cx, cy, dB, hw);
+        drawRoadHalf(g, sx, sy, cx, cy, dA, hw, C);
+        drawRoadHalf(g, sx, sy, cx, cy, dB, hw, C);
     }
 
     /** Road from tile edge (direction dir) to centre point (cx,cy). */
-    private void drawRoadHalf(GuiGraphics g, int sx, int sy, int cx, int cy, int dir, int hw) {
+    private void drawRoadHalf(GuiGraphics g, int sx, int sy, int cx, int cy, int dir, int hw, int C) {
         switch(dir) {
             case 0 -> { // North edge to centre
                 g.fill(cx-hw, sy+1,   cx+hw, cy,      C_ROAD);
@@ -239,14 +268,14 @@ public class TileKingdomsScreen extends GameScreen<TileKingdomsGame, TileKingdom
                 g.fill(cx+hw-1,sy+1,  cx+hw, cy,      C_ROAD_EDGE);
             }
             case 1 -> { // East edge to centre
-                g.fill(cx,    cy-hw,  sx+CELL-1, cy+hw, C_ROAD);
-                g.fill(cx,    cy-hw,  sx+CELL-1, cy-hw+1, C_ROAD_EDGE);
-                g.fill(cx,    cy+hw-1,sx+CELL-1, cy+hw, C_ROAD_EDGE);
+                g.fill(cx,    cy-hw,  sx+C-1, cy+hw, C_ROAD);
+                g.fill(cx,    cy-hw,  sx+C-1, cy-hw+1, C_ROAD_EDGE);
+                g.fill(cx,    cy+hw-1,sx+C-1, cy+hw, C_ROAD_EDGE);
             }
             case 2 -> { // South edge to centre
-                g.fill(cx-hw, cy,    cx+hw,  sy+CELL-1, C_ROAD);
-                g.fill(cx-hw, cy,    cx-hw+1,sy+CELL-1, C_ROAD_EDGE);
-                g.fill(cx+hw-1,cy,   cx+hw,  sy+CELL-1, C_ROAD_EDGE);
+                g.fill(cx-hw, cy,    cx+hw,  sy+C-1, C_ROAD);
+                g.fill(cx-hw, cy,    cx-hw+1,sy+C-1, C_ROAD_EDGE);
+                g.fill(cx+hw-1,cy,   cx+hw,  sy+C-1, C_ROAD_EDGE);
             }
             case 3 -> { // West edge to centre
                 g.fill(sx+1,  cy-hw, cx,     cy+hw, C_ROAD);
@@ -257,34 +286,32 @@ public class TileKingdomsScreen extends GameScreen<TileKingdomsGame, TileKingdom
     }
 
     /** Road stub from edge to centre (for cross/T/single-exit). */
-    private void drawRoadSegment(GuiGraphics g, int sx, int sy, int dir, int ignored) {
-        int cx=sx+CELL/2, cy=sy+CELL/2, hw=2;
-        drawRoadHalf(g,sx,sy,cx,cy,dir,hw);
+    private void drawRoadSegment(GuiGraphics g, int sx, int sy, int dir, int ignored) { drawRoadSegment(g,sx,sy,dir,ignored,cs()); }
+    private void drawRoadSegment(GuiGraphics g, int sx, int sy, int dir, int ignored, int C) {
+        int cx=sx+C/2, cy=sy+C/2, hw=Math.max(2,C/9);
+        drawRoadHalf(g,sx,sy,cx,cy,dir,hw,C);
     }
 
     /** Overlay for ghost preview (semi-transparent edge drawing only). */
-    private void drawTileOverlay(GuiGraphics g, int sx, int sy, TileType type, int rot, int alpha) {
+    private void drawTileOverlay(GuiGraphics g, int sx, int sy, TileType type, int rot, int alpha) { drawTileOverlay(g,sx,sy,type,rot,alpha,cs()); }
+    private void drawTileOverlay(GuiGraphics g, int sx, int sy, TileType type, int rot, int alpha, int C) {
         short val = PlacedTile.pack(type,rot);
         for(int d=0;d<4;d++) {
             TileType.Edge e=PlacedTile.edgeOf(val,d);
-            if(e==TileType.Edge.C) drawCityBand(g,sx,sy,d);
+            if(e==TileType.Edge.C) drawCityBand(g,sx,sy,d,C);
         }
         boolean[] roadExit=new boolean[4]; int rc=0;
         for(int d=0;d<4;d++) if(PlacedTile.edgeOf(val,d)==TileType.Edge.R){roadExit[d]=true;rc++;}
         if(rc==2){int dA=-1,dB=-1; for(int d=0;d<4;d++)if(roadExit[d]){if(dA<0)dA=d;else dB=d;} if(dA>=0)drawRoadCorridor(g,sx,sy,dA,dB);}
-        else for(int d=0;d<4;d++) if(roadExit[d]) drawRoadSegment(g,sx,sy,d,-1);
+        else for(int d=0;d<4;d++) if(roadExit[d]) drawRoadSegment(g,sx,sy,d,-1,C);
     }
 
     /** Full preview tile (larger ps square). */
     private void drawTilePreview(GuiGraphics g, int px, int py, int ps, TileType type, int rot) {
         short val=PlacedTile.pack(type,rot);
         g.fill(px,py,px+ps,py+ps,C_FIELD);
-        int savedCell=CELL;
-        // Scale road/city drawing to ps size — use the same helpers with offset math
-        // Approximate by calling drawTile on a ps×ps area (rebind sx,sy)
-        // We'll just draw it at CELL size since we made ps=CELL+10; approximate
-        int ox=(ps-CELL)/2;
-        drawTile(g, px+ox, py+ox, val);
+
+        drawTile(g, px, py, val, ps);
         // Border for preview box
         g.fill(px,py,px+ps,py+1,C_BORDER);
         g.fill(px,py+ps-1,px+ps,py+ps,C_BORDER);
@@ -293,7 +320,8 @@ public class TileKingdomsScreen extends GameScreen<TileKingdomsGame, TileKingdom
     }
 
     // ── Followers on tiles ────────────────────────────────────────────────────
-    private void drawFollowersOnTile(GuiGraphics g, int sx, int sy, int lx, int ly, int[] claims) {
+    private void drawFollowersOnTile(GuiGraphics g, int sx, int sy, int lx, int ly, int[] claims) { drawFollowersOnTile(g,sx,sy,lx,ly,claims,cs()); }
+    private void drawFollowersOnTile(GuiGraphics g, int sx, int sy, int lx, int ly, int[] claims, int C) {
         for (int c : claims) {
             int[] p = TileKingdomsGame.unpackClaimInt(c);
             if (p[0]==lx && p[1]==ly) {
@@ -306,12 +334,13 @@ public class TileKingdomsScreen extends GameScreen<TileKingdomsGame, TileKingdom
         }
     }
 
-    private int[] featurePt(int sx, int sy, int slot) {
-        int cx=sx+CELL/2, cy=sy+CELL/2;
+    private int[] featurePt(int sx, int sy, int slot) { return featurePt(sx,sy,slot,cs()); }
+    private int[] featurePt(int sx, int sy, int slot, int C) {
+        int cx=sx+C/2, cy=sy+C/2;
         return switch(slot) {
             case TileKingdomsGame.SLOT_N -> new int[]{cx, sy+5};
-            case TileKingdomsGame.SLOT_E -> new int[]{sx+CELL-5, cy};
-            case TileKingdomsGame.SLOT_S -> new int[]{cx, sy+CELL-5};
+            case TileKingdomsGame.SLOT_E -> new int[]{sx+C-C/5, cy};
+            case TileKingdomsGame.SLOT_S -> new int[]{cx, sy+C-C/5};
             case TileKingdomsGame.SLOT_W -> new int[]{sx+5, cy};
             default                      -> new int[]{cx, cy};
         };
@@ -325,12 +354,12 @@ public class TileKingdomsScreen extends GameScreen<TileKingdomsGame, TileKingdom
         if(gi<0||gi>=grid.length||PlacedTile.isEmpty(grid[gi])) return;
         short tile=grid[gi];
         TileType type=PlacedTile.typeOf(tile);
-
+        int C = cs();
         // Highlight the just-placed tile
-        g.fill(sx,sy,sx+CELL,sy+1,0xFFFFFF00);
-        g.fill(sx,sy+CELL-1,sx+CELL,sy+CELL,0xFFFFFF00);
-        g.fill(sx,sy,sx+1,sy+CELL,0xFFFFFF00);
-        g.fill(sx+CELL-1,sy,sx+CELL,sy+CELL,0xFFFFFF00);
+        g.fill(sx,sy,sx+C,sy+1,0xFFFFFF00);
+        g.fill(sx,sy+C-1,sx+C,sy+C,0xFFFFFF00);
+        g.fill(sx,sy,sx+1,sy+C,0xFFFFFF00);
+        g.fill(sx+C-1,sy,sx+C,sy+C,0xFFFFFF00);
 
         for(int slot=0;slot<5;slot++) {
             boolean valid=false;
@@ -458,7 +487,7 @@ public class TileKingdomsScreen extends GameScreen<TileKingdomsGame, TileKingdom
             TileType ct=menu.getCurrentTile();
             // ── Rotate button ────────────────────────────────────────────────
             if(ct!=null&&myTurn&&phase==TileKingdomsGame.PHASE_PLACE) {
-                int ps=CELL+10, rbx=width-ps-6, rby=height-BOTTOM_BAR-16;
+                int ps=cs()+8, rbx=width-ps-6, rby=height-BOTTOM_BAR-16;
                 if(mx>=rbx&&mx<rbx+ps&&my>=rby&&my<rby+12){sendAction(TileKingdomsActionPayload.ROTATE);return true;}
             }
             // ── Claim skip ───────────────────────────────────────────────────
@@ -496,13 +525,21 @@ public class TileKingdomsScreen extends GameScreen<TileKingdomsGame, TileKingdom
 
     @Override
     public boolean mouseDragged(double mx,double my,int b,double dx,double dy) {
-        if(dragging){camX=dragStartCamX-(float)((mx-dragStartMX)/CELL);camY=dragStartCamY-(float)((my-dragStartMY)/CELL);return true;}
+        if(dragging){camX=dragStartCamX-(float)((mx-dragStartMX)/cs());camY=dragStartCamY-(float)((my-dragStartMY)/cs());return true;}
         return super.mouseDragged(mx,my,b,dx,dy);
     }
     @Override
     public boolean mouseReleased(double mx,double my,int b){if(b==1)dragging=false;return super.mouseReleased(mx,my,b);}
+
     @Override
-    public boolean mouseScrolled(double mx,double my,double sx,double sy){camY-=(float)(sy*0.7f);return true;}
+    public boolean mouseScrolled(double mx, double my, double sx, double sy) {
+        if (hasControlDown()) {
+            zoom = Math.max(0.35f, Math.min(2.5f, zoom + (float)sy * 0.12f));
+        } else {
+            camY -= (float)(sy * 0.7f);
+        }
+        return true;
+    }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
     private boolean isMyTurn() {

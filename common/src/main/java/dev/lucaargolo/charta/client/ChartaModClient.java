@@ -115,6 +115,13 @@ public abstract class ChartaModClient {
         this.registerMenuScreen(ModMenuTypes.FUN, FunScreen::new);
         this.registerMenuScreen(ModMenuTypes.SOLITAIRE, SolitaireScreen::new);
         this.registerMenuScreen(ModMenuTypes.TEXAS_HOLDEM, TexasHoldemScreen::new);
+        this.registerMenuScreen(ModMenuTypes.TILE_KINGDOMS, dev.lucaargolo.charta.common.game.impl.tilekingdoms.TileKingdomsScreen::new);
+        dev.lucaargolo.charta.common.item.TileKingdomsBoxItem.TILE_VIEWER_OPENER = () -> {
+            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+            mc.setScreen(new dev.lucaargolo.charta.common.game.impl.tilekingdoms.TileViewerScreen(mc.screen));
+        };
+        pm.registerClientHandler(dev.lucaargolo.charta.common.game.impl.tilekingdoms.TileKingdomsBoardPayload.class,
+                dev.lucaargolo.charta.common.game.impl.tilekingdoms.TileKingdomsBoardPayload::handleClient);
 
         this.registerAdditionalModel(ChartaMod.id("deck"));
         this.registerDynamicItemRenderer(ModItems.DECK, DeckItemRenderer::new);
