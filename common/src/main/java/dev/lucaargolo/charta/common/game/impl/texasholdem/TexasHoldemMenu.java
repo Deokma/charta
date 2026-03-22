@@ -41,7 +41,9 @@ public class TexasHoldemMenu extends AbstractCardMenu<TexasHoldemGame, TexasHold
     private static final int OFFSET_DEALER        = MAX_PLAYERS * 2 + 5;
     private static final int OFFSET_COMMUNITY_CNT = MAX_PLAYERS * 2 + 6;
     private static final int OFFSET_RAISE_AMOUNT  = MAX_PLAYERS * 2 + 7;
-    private static final int DATA_COUNT           = MAX_PLAYERS * 2 + 8;
+    private static final int OFFSET_IS_PAUSED     = MAX_PLAYERS * 2 + 8;
+    private static final int OFFSET_SKIP_VOTES    = MAX_PLAYERS * 2 + 9;
+    private static final int DATA_COUNT           = MAX_PLAYERS * 2 + 10;
 
     private final ContainerData data = new ContainerData() {
 
@@ -76,6 +78,10 @@ public class TexasHoldemMenu extends AbstractCardMenu<TexasHoldemGame, TexasHold
                 return g.communityCardCount;
             } else if (index == OFFSET_RAISE_AMOUNT) {
                 return g.getRaiseAmountPublic();
+            } else if (index == OFFSET_IS_PAUSED) {
+                return g.isPaused ? 1 : 0;
+            } else if (index == OFFSET_SKIP_VOTES) {
+                return g.skipVoteMask;
             }
             return 0;
         }
@@ -107,6 +113,11 @@ public class TexasHoldemMenu extends AbstractCardMenu<TexasHoldemGame, TexasHold
                 g.communityCardCount = value;
             }
             // OFFSET_RAISE_AMOUNT is read-only (computed server-side)
+            if (index == OFFSET_IS_PAUSED) {
+                g.isPaused = (value != 0);
+            } else if (index == OFFSET_SKIP_VOTES) {
+                g.skipVoteMask = value;
+            }
         }
 
         @Override
@@ -186,8 +197,8 @@ public class TexasHoldemMenu extends AbstractCardMenu<TexasHoldemGame, TexasHold
         return data.get(OFFSET_BET);
     }
 
-    public TexasHoldemGame.Phase getPhase() {
-        return TexasHoldemGame.Phase.fromOrdinal(data.get(OFFSET_PHASE));
+    public PokerPhase getPhase() {
+        return PokerPhase.fromOrdinal(data.get(OFFSET_PHASE));
     }
 
     public int getDealerIndex() {
@@ -215,6 +226,16 @@ public class TexasHoldemMenu extends AbstractCardMenu<TexasHoldemGame, TexasHold
     /** Returns the starting chip count for this game (from game options). */
     public int getStartingChips() {
         return game.getStartingChipsPublic();
+    }
+
+    /** True while the between-hands pause is active. */
+    public boolean isPaused() {
+        return data.get(OFFSET_IS_PAUSED) != 0;
+    }
+
+    /** Bitmask of players who have voted to skip the pause. */
+    public int getSkipVoteMask() {
+        return data.get(OFFSET_SKIP_VOTES);
     }
 
     @Override

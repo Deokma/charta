@@ -100,7 +100,7 @@ public class TexasHoldemScreen extends GameScreen<TexasHoldemGame, TexasHoldemMe
         g.blit(TEXTURE, 0, bgTop, 0, 0, width, bgBottom - bgTop, width, bgBottom - bgTop);
 
         boolean myTurn = menu.isCurrentPlayer() && menu.isGameReady()
-                && menu.getPhase() != TexasHoldemGame.Phase.SHOWDOWN;
+                && menu.getPhase() != PokerPhase.SHOWDOWN;
         int myIdx = menu.getGame().getPlayers().indexOf(menu.getCardPlayer());
         boolean isFolded = myIdx >= 0 && menu.isFolded(myIdx);
         boolean isAllIn  = myIdx >= 0 && menu.isAllIn(myIdx);
@@ -225,7 +225,7 @@ public class TexasHoldemScreen extends GameScreen<TexasHoldemGame, TexasHoldemMe
     protected void renderLabels(@NotNull GuiGraphics g, int mouseX, int mouseY) {
         int cx = width / 2 - leftPos;
 
-        TexasHoldemGame.Phase phase = menu.getPhase();
+        PokerPhase phase = menu.getPhase();
         String phaseName = switch (phase) {
             case PREFLOP  -> "Pre-Flop";
             case FLOP     -> "Flop";
@@ -246,7 +246,7 @@ public class TexasHoldemScreen extends GameScreen<TexasHoldemGame, TexasHoldemMe
             g.drawString(font, betComp, cx - font.width(betComp) / 2, 24, 0xFFFFFF);
         }
 
-        if (phase == TexasHoldemGame.Phase.SHOWDOWN) {
+        if (phase == PokerPhase.SHOWDOWN) {
             Component bannerMsg = null;
             var history = ChartaModClient.LOCAL_HISTORY;
             for (int i = history.size() - 1; i >= 0; i--) {
@@ -267,6 +267,10 @@ public class TexasHoldemScreen extends GameScreen<TexasHoldemGame, TexasHoldemMe
                     : Component.translatable("message.charta.other_turn", current.getName())
                     .withStyle(s -> s.withColor(current.getColor().getTextureDiffuseColor()));
             g.drawString(font, turnComp, cx - font.width(turnComp) / 2, 125, 0xFFFFFF);
+        } else if (menu.isPaused()) {
+            Component nextComp = Component.literal("Next hand starting...")
+                    .withStyle(ChatFormatting.YELLOW);
+            g.drawString(font, nextComp, cx - font.width(nextComp) / 2, 125, 0xFFFFFF);
         } else {
             Component dealComp = Component.translatable("message.charta.dealing_cards").withStyle(ChatFormatting.GOLD);
             g.drawString(font, dealComp, cx - font.width(dealComp) / 2, 125, 0xFFFFFF);
@@ -277,7 +281,7 @@ public class TexasHoldemScreen extends GameScreen<TexasHoldemGame, TexasHoldemMe
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         boolean myTurn = menu.isCurrentPlayer() && menu.isGameReady()
-                && menu.getPhase() != TexasHoldemGame.Phase.SHOWDOWN;
+                && menu.getPhase() != PokerPhase.SHOWDOWN;
         int myIdx = menu.getGame().getPlayers().indexOf(menu.getCardPlayer());
         boolean isFolded = myIdx >= 0 && menu.isFolded(myIdx);
         boolean isAllIn  = myIdx >= 0 && menu.isAllIn(myIdx);
