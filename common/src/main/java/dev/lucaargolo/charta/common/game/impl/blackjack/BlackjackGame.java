@@ -309,8 +309,12 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
                     case ACTION_DOUBLE -> doDouble(pi);
                 }
             }
-            activePlayerIndex++;
-            // Schedule next player via tick cycle
+            // Only advance to next player if this player is done (bust, stand, or double)
+            // If they hit and can still play, loop back to the same player
+            if (busted[pi] || stood[pi]) {
+                activePlayerIndex++;
+            }
+            // Schedule next action via tick cycle
             isGameReady = false;
             scheduledActions.add(() -> {});
         });
