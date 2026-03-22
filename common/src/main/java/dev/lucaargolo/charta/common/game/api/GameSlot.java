@@ -15,6 +15,7 @@ import java.util.stream.Stream;
 
 public class GameSlot {
 
+
     private CardTableBlockEntity parent = null;
     private int index = -1;
 

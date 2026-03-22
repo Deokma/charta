@@ -36,6 +36,9 @@ public record CardContainerSlotClickPayload(int containerId, int slotId, int car
             if(player instanceof LivingEntityMixed mixed && player.containerMenu instanceof AbstractCardMenu<?, ?> cardMenu && cardMenu.containerId == payload.containerId) {
                 CardPlayer cardPlayer = mixed.charta_getCardPlayer();
                 CardSlot<?, ?> slot = cardMenu.getCardSlot(payload.slotId);
+                // In Blackjack the bottom-bar hand is display-only — block card picking
+                if (cardMenu instanceof dev.lucaargolo.charta.common.game.impl.blackjack.BlackjackMenu
+                        && slot.getType() == dev.lucaargolo.charta.common.menu.CardSlot.Type.HORIZONTAL) return;
                 GameSlot carriedCards = cardMenu.getCarriedCards();
                 if(carriedCards.isEmpty() && slot.canRemoveCard(cardPlayer, payload.cardId)) {
                     slot.preUpdate();
