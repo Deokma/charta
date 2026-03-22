@@ -825,6 +825,8 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
                 }
             }
             advanceDealer();
+            // Pause ~2.5 seconds (50 ticks at 20 TPS) before starting the next hand
+            for (int i = 0; i < 50; i++) scheduledActions.add(() -> {});
             scheduledActions.add(this::dealNewHand);
             isGameReady = false;
         } else {
