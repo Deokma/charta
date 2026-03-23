@@ -14,10 +14,7 @@ import dev.lucaargolo.charta.common.game.api.card.Deck;
 import dev.lucaargolo.charta.common.game.api.game.Game;
 import dev.lucaargolo.charta.common.game.api.game.GameType;
 import dev.lucaargolo.charta.common.item.DeckItem;
-import dev.lucaargolo.charta.common.network.GameSlotCompletePayload;
-import dev.lucaargolo.charta.common.network.GameSlotPositionPayload;
-import dev.lucaargolo.charta.common.network.GameSlotResetPayload;
-import dev.lucaargolo.charta.common.network.GameStartPayload;
+import dev.lucaargolo.charta.common.network.*;
 import dev.lucaargolo.charta.common.utils.CardImage;
 import dev.lucaargolo.charta.mixed.LivingEntityMixed;
 import net.minecraft.ChatFormatting;
@@ -396,10 +393,20 @@ public class CardTableBlockEntity extends BlockEntity {
         if(blockEntity.game != null) {
             Game<?, ?> game = blockEntity.game;
             // Push board data for TileKingdoms games to all players with the menu open
-            if (game instanceof dev.lucaargolo.charta.common.game.impl.tilekingdoms.TileKingdomsGame) {
+            if (game instanceof dev.lucaargolo.charta.common.game.impl.tilekingdoms.TileKingdomsGame tkGame) {
+                // If game flagged dirty, propagate to ALL open menus first, then clear
+                if (tkGame.boardDirty) {
+                    for (net.minecraft.server.level.ServerPlayer sp : ((ServerLevel) level).players()) {
+                        if (sp.containerMenu instanceof dev.lucaargolo.charta.common.game.impl.tilekingdoms.TileKingdomsMenu tkMenu) {
+                            tkMenu.markBoardDirty();
+                        }
+                    }
+                    tkGame.boardDirty = false;
+                }
+                // Now poll each menu — each has its own per-menu dirty flag
                 for (net.minecraft.server.level.ServerPlayer sp : ((ServerLevel) level).players()) {
                     if (sp.containerMenu instanceof dev.lucaargolo.charta.common.game.impl.tilekingdoms.TileKingdomsMenu tkMenu) {
-                        dev.lucaargolo.charta.common.game.impl.tilekingdoms.TileKingdomsBoardPayload payload = tkMenu.pollBoardPayload();
+                        TileKingdomsBoardPayload payload = tkMenu.pollBoardPayload();
                         if (payload != null) {
                             ChartaMod.getPacketManager().sendToPlayer(sp, payload);
                         }

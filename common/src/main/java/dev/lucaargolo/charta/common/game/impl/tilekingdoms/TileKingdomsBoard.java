@@ -4,68 +4,88 @@ import java.util.*;
 
 public class TileKingdomsBoard {
 
-    public static final int SIZE = 25, HALF = SIZE/2;
-    private static final int[] DX = {0,1,0,-1}, DY = {-1,0,1,0};
+    public static final int SIZE = 25, HALF = SIZE / 2;
+    private static final int[] DX = {0, 1, 0, -1}, DY = {-1, 0, 1, 0};
 
-    private final short[] grid = new short[SIZE*SIZE];
-    private int minX=HALF,maxX=HALF,minY=HALF,maxY=HALF;
+    private final short[] grid = new short[SIZE * SIZE];
+    private int minX = HALF, maxX = HALF, minY = HALF, maxY = HALF;
 
-    public TileKingdomsBoard() { Arrays.fill(grid, PlacedTile.EMPTY); }
+    public TileKingdomsBoard() {
+        Arrays.fill(grid, PlacedTile.EMPTY);
+    }
 
     // ── Grid access ───────────────────────────────────────────────────────────
-    private int idx(int gx,int gy) { return gy*SIZE+gx; }
-    public short get(int lx,int ly) {
-        int gx=lx+HALF,gy=ly+HALF;
-        if(gx<0||gx>=SIZE||gy<0||gy>=SIZE) return PlacedTile.EMPTY;
-        return grid[idx(gx,gy)];
+    private int idx(int gx, int gy) {
+        return gy * SIZE + gx;
     }
-    public boolean isEmpty(int lx,int ly) { return PlacedTile.isEmpty(get(lx,ly)); }
+
+    public short get(int lx, int ly) {
+        int gx = lx + HALF, gy = ly + HALF;
+        if (gx < 0 || gx >= SIZE || gy < 0 || gy >= SIZE) return PlacedTile.EMPTY;
+        return grid[idx(gx, gy)];
+    }
+
+    public boolean isEmpty(int lx, int ly) {
+        return PlacedTile.isEmpty(get(lx, ly));
+    }
 
     // ── Placement ─────────────────────────────────────────────────────────────
-    public boolean canPlace(int lx,int ly,TileType type,int rot) {
-        if(!isEmpty(lx,ly)) return false;
-        short cand=PlacedTile.pack(type,rot);
-        boolean hasNb=false;
-        for(int d=0;d<4;d++) {
-            short nb=get(lx+DX[d],ly+DY[d]);
-            if(!PlacedTile.isEmpty(nb)) { hasNb=true; if(!PlacedTile.compatible(cand,d,nb)) return false; }
+    public boolean canPlace(int lx, int ly, TileType type, int rot) {
+        if (!isEmpty(lx, ly)) return false;
+        short cand = PlacedTile.pack(type, rot);
+        boolean hasNb = false;
+        for (int d = 0; d < 4; d++) {
+            short nb = get(lx + DX[d], ly + DY[d]);
+            if (!PlacedTile.isEmpty(nb)) {
+                hasNb = true;
+                if (!PlacedTile.compatible(cand, d, nb)) return false;
+            }
         }
         return hasNb;
     }
-    public boolean place(int lx,int ly,TileType type,int rot) {
-        if(!canPlace(lx,ly,type,rot)) return false;
-        int gx=lx+HALF,gy=ly+HALF;
-        grid[idx(gx,gy)]=PlacedTile.pack(type,rot);
-        minX=Math.min(minX,gx); maxX=Math.max(maxX,gx);
-        minY=Math.min(minY,gy); maxY=Math.max(maxY,gy);
+
+    public boolean place(int lx, int ly, TileType type, int rot) {
+        if (!canPlace(lx, ly, type, rot)) return false;
+        int gx = lx + HALF, gy = ly + HALF;
+        grid[idx(gx, gy)] = PlacedTile.pack(type, rot);
+        minX = Math.min(minX, gx);
+        maxX = Math.max(maxX, gx);
+        minY = Math.min(minY, gy);
+        maxY = Math.max(maxY, gy);
         return true;
     }
-    public void placeForced(int lx,int ly,TileType type,int rot) {
-        int gx=lx+HALF,gy=ly+HALF;
-        if(gx<0||gx>=SIZE||gy<0||gy>=SIZE) return;
-        grid[idx(gx,gy)]=PlacedTile.pack(type,rot);
-        minX=Math.min(minX,gx); maxX=Math.max(maxX,gx);
-        minY=Math.min(minY,gy); maxY=Math.max(maxY,gy);
+
+    public void placeForced(int lx, int ly, TileType type, int rot) {
+        int gx = lx + HALF, gy = ly + HALF;
+        if (gx < 0 || gx >= SIZE || gy < 0 || gy >= SIZE) return;
+        grid[idx(gx, gy)] = PlacedTile.pack(type, rot);
+        minX = Math.min(minX, gx);
+        maxX = Math.max(maxX, gx);
+        minY = Math.min(minY, gy);
+        maxY = Math.max(maxY, gy);
     }
 
     public boolean hasAnyValidPosition(TileType type) {
-        for(int r=0;r<4;r++) for(int gy=minY-1;gy<=maxY+1;gy++) for(int gx=minX-1;gx<=maxX+1;gx++)
-            if(canPlace(gx-HALF,gy-HALF,type,r)) return true;
+        for (int r = 0; r < 4; r++)
+            for (int gy = minY - 1; gy <= maxY + 1; gy++)
+                for (int gx = minX - 1; gx <= maxX + 1; gx++)
+                    if (canPlace(gx - HALF, gy - HALF, type, r)) return true;
         return false;
     }
 
     // ── Region BFS (for claiming check) ──────────────────────────────────────
+
     /**
      * Returns set of (slot|lx|ly) packed positions in the same connected region
      * as the given starting edge slot on tile (lx,ly).
      */
-    public Set<Long> getRegion(int lx,int ly,int slot) {
+    public Set<Long> getRegion(int lx, int ly, int slot) {
         Set<Long> visited = new HashSet<>();
-        short tile = get(lx,ly);
-        if(PlacedTile.isEmpty(tile)) return visited;
-        TileType.Edge edge = (slot==TileKingdomsGame.SLOT_CENTER) ? TileType.Edge.F : PlacedTile.edgeOf(tile,slot);
-        if(edge==TileType.Edge.F) return visited;
-        bfsRegion(lx,ly,slot,edge,visited,new HashSet<>());
+        short tile = get(lx, ly);
+        if (PlacedTile.isEmpty(tile)) return visited;
+        TileType.Edge edge = (slot == TileKingdomsGame.SLOT_CENTER) ? TileType.Edge.F : PlacedTile.edgeOf(tile, slot);
+        if (edge == TileType.Edge.F) return visited;
+        bfsRegion(lx, ly, slot, edge, visited, new HashSet<>());
         return visited;
     }
 
@@ -141,187 +161,205 @@ public class TileKingdomsBoard {
     }
 
     // ── Scoring after tile placement ──────────────────────────────────────────
+
     /**
      * Score completions caused by placing tile at (lx,ly).
      * Updates scores[] and returns followers from completed regions.
      */
-    public void scoreAndReturnFollowers(int lx,int ly,Map<Long,Integer> claims,
-                                        int nPlayers,int[] scores,int[] followersLeft) {
-        short tile=get(lx,ly);
-        if(PlacedTile.isEmpty(tile)) return;
-        TileType type=PlacedTile.typeOf(tile);
+    public void scoreAndReturnFollowers(int lx, int ly, Map<Long, Integer> claims,
+                                        int nPlayers, int[] scores, int[] followersLeft) {
+        short tile = get(lx, ly);
+        if (PlacedTile.isEmpty(tile)) return;
+        TileType type = PlacedTile.typeOf(tile);
 
         Set<String> processedRegions = new HashSet<>();
 
         // Check each edge
-        for(int dir=0;dir<4;dir++) {
-            TileType.Edge edge=PlacedTile.edgeOf(tile,dir);
-            if(edge==TileType.Edge.F) continue;
-            String regionId=getRegionId(lx,ly,dir);
-            if(processedRegions.contains(regionId)) continue;
+        for (int dir = 0; dir < 4; dir++) {
+            TileType.Edge edge = PlacedTile.edgeOf(tile, dir);
+            if (edge == TileType.Edge.F) continue;
+            String regionId = getRegionId(lx, ly, dir);
+            if (processedRegions.contains(regionId)) continue;
             processedRegions.add(regionId);
 
-            if(edge==TileType.Edge.C) scoreCity(lx,ly,dir,claims,nPlayers,scores,followersLeft,true);
-            else if(edge==TileType.Edge.R) scoreRoad(lx,ly,dir,claims,nPlayers,scores,followersLeft,true);
+            if (edge == TileType.Edge.C) scoreCity(lx, ly, dir, claims, nPlayers, scores, followersLeft, true);
+            else if (edge == TileType.Edge.R) scoreRoad(lx, ly, dir, claims, nPlayers, scores, followersLeft, true);
         }
         // Monastery
-        if(type!=null && type.monastery) scoreMonastery(lx,ly,claims,nPlayers,scores,followersLeft,true);
+        if (type != null && type.monastery) scoreMonastery(lx, ly, claims, nPlayers, scores, followersLeft, true);
         // Check adjacent monasteries
-        for(int dy=-1;dy<=1;dy++) for(int dx=-1;dx<=1;dx++) {
-            if(dx==0&&dy==0) continue;
-            short nb=get(lx+dx,ly+dy);
-            TileType nbt=PlacedTile.typeOf(nb);
-            if(nbt!=null&&nbt.monastery) scoreMonastery(lx+dx,ly+dy,claims,nPlayers,scores,followersLeft,true);
-        }
+        for (int dy = -1; dy <= 1; dy++)
+            for (int dx = -1; dx <= 1; dx++) {
+                if (dx == 0 && dy == 0) continue;
+                short nb = get(lx + dx, ly + dy);
+                TileType nbt = PlacedTile.typeOf(nb);
+                if (nbt != null && nbt.monastery)
+                    scoreMonastery(lx + dx, ly + dy, claims, nPlayers, scores, followersLeft, true);
+            }
     }
 
-    public Set<Long> getCompletedRegionClaims(int lx,int ly,Map<Long,Integer> claims) {
+    public Set<Long> getCompletedRegionClaims(int lx, int ly, Map<Long, Integer> claims) {
         // Called after scoreAndReturnFollowers - but we fold them into scoreAndReturnFollowers directly
         return new HashSet<>(); // handled inline now
     }
 
-    private String getRegionId(int lx,int ly,int slot) {
-        Set<Long> region=getRegion(lx,ly,slot);
-        TreeSet<Long> sorted=new TreeSet<>(region);
+    private String getRegionId(int lx, int ly, int slot) {
+        Set<Long> region = getRegion(lx, ly, slot);
+        TreeSet<Long> sorted = new TreeSet<>(region);
         return sorted.toString();
     }
 
     // ── City scoring ──────────────────────────────────────────────────────────
-    private void scoreCity(int lx,int ly,int startSlot,Map<Long,Integer> claims,
-                           int nPlayers,int[] scores,int[] followersLeft,boolean onlyIfComplete) {
-        Set<Long> region=new HashSet<>();
-        Set<String> tiles=new HashSet<>();
-        boolean complete=bfsCityComplete(lx,ly,startSlot,region,tiles);
-        if(onlyIfComplete && !complete) return;
-        int[] owners=getMajorityOwners(region,claims,nPlayers);
-        int pts=complete ? tiles.size()*2 : tiles.size();
-        for(int o:owners) if(o>=0&&o<scores.length) scores[o]+=pts;
-        if(complete) returnFollowers(region,claims,followersLeft);
+    private void scoreCity(int lx, int ly, int startSlot, Map<Long, Integer> claims,
+                           int nPlayers, int[] scores, int[] followersLeft, boolean onlyIfComplete) {
+        Set<Long> region = new HashSet<>();
+        Set<String> tiles = new HashSet<>();
+        boolean complete = bfsCityComplete(lx, ly, startSlot, region, tiles);
+        if (onlyIfComplete && !complete) return;
+        int[] owners = getMajorityOwners(region, claims, nPlayers);
+        int pts = complete ? tiles.size() * 2 : tiles.size();
+        for (int o : owners) if (o >= 0 && o < scores.length) scores[o] += pts;
+        if (complete) returnFollowers(region, claims, followersLeft);
     }
 
-    private boolean bfsCityComplete(int lx,int ly,int slot,Set<Long> region,Set<String> tiles) {
-        long key=TileKingdomsGame.packPos(lx,ly,slot);
-        if(region.contains(key)) return true;
+    private boolean bfsCityComplete(int lx, int ly, int slot, Set<Long> region, Set<String> tiles) {
+        long key = TileKingdomsGame.packPos(lx, ly, slot);
+        if (region.contains(key)) return true;
         region.add(key);
-        short tile=get(lx,ly);
-        if(PlacedTile.isEmpty(tile)) return false; // open edge
-        tiles.add(lx+","+ly);
-        TileType type=PlacedTile.typeOf(tile);
-        boolean complete=true;
+        short tile = get(lx, ly);
+        if (PlacedTile.isEmpty(tile)) return false; // open edge
+        tiles.add(lx + "," + ly);
+        TileType type = PlacedTile.typeOf(tile);
+        boolean complete = true;
         // Spread within tile for connected city
-        if(type!=null && type.connectedCity) {
-            for(int d=0;d<4;d++) {
-                if(PlacedTile.edgeOf(tile,d)==TileType.Edge.C) {
-                    long dk=TileKingdomsGame.packPos(lx,ly,d);
-                    if(!region.contains(dk)) complete &= bfsCityComplete(lx,ly,d,region,tiles);
+        if (type != null && type.connectedCity) {
+            for (int d = 0; d < 4; d++) {
+                if (PlacedTile.edgeOf(tile, d) == TileType.Edge.C) {
+                    long dk = TileKingdomsGame.packPos(lx, ly, d);
+                    if (!region.contains(dk)) complete &= bfsCityComplete(lx, ly, d, region, tiles);
                 }
             }
         }
         // Cross to neighbour
-        int nx=lx+DX[slot],ny=ly+DY[slot];
-        short nb=get(nx,ny);
-        if(PlacedTile.isEmpty(nb)) return false;
-        if(PlacedTile.edgeOf(nb,TileType.opposite(slot))==TileType.Edge.C)
-            complete &= bfsCityComplete(nx,ny,TileType.opposite(slot),region,tiles);
+        int nx = lx + DX[slot], ny = ly + DY[slot];
+        short nb = get(nx, ny);
+        if (PlacedTile.isEmpty(nb)) return false;
+        if (PlacedTile.edgeOf(nb, TileType.opposite(slot)) == TileType.Edge.C)
+            complete &= bfsCityComplete(nx, ny, TileType.opposite(slot), region, tiles);
         return complete;
     }
 
     // ── Road scoring ──────────────────────────────────────────────────────────
-    private void scoreRoad(int lx,int ly,int startSlot,Map<Long,Integer> claims,
-                           int nPlayers,int[] scores,int[] followersLeft,boolean onlyIfComplete) {
-        Set<Long> region=new HashSet<>();
-        Set<String> tiles=new HashSet<>();
-        boolean complete=bfsRoadComplete(lx,ly,startSlot,region,tiles);
-        if(onlyIfComplete && !complete) return;
-        int[] owners=getMajorityOwners(region,claims,nPlayers);
-        int pts=tiles.size();
-        for(int o:owners) if(o>=0&&o<scores.length) scores[o]+=pts;
-        if(complete) returnFollowers(region,claims,followersLeft);
+    private void scoreRoad(int lx, int ly, int startSlot, Map<Long, Integer> claims,
+                           int nPlayers, int[] scores, int[] followersLeft, boolean onlyIfComplete) {
+        Set<Long> region = new HashSet<>();
+        Set<String> tiles = new HashSet<>();
+        boolean complete = bfsRoadComplete(lx, ly, startSlot, region, tiles);
+        if (onlyIfComplete && !complete) return;
+        int[] owners = getMajorityOwners(region, claims, nPlayers);
+        int pts = tiles.size();
+        for (int o : owners) if (o >= 0 && o < scores.length) scores[o] += pts;
+        if (complete) returnFollowers(region, claims, followersLeft);
     }
 
-    private boolean bfsRoadComplete(int lx,int ly,int slot,Set<Long> region,Set<String> tiles) {
-        long key=TileKingdomsGame.packPos(lx,ly,slot);
-        if(region.contains(key)) return true;
+    private boolean bfsRoadComplete(int lx, int ly, int slot, Set<Long> region, Set<String> tiles) {
+        long key = TileKingdomsGame.packPos(lx, ly, slot);
+        if (region.contains(key)) return true;
         region.add(key);
-        short tile=get(lx,ly);
-        if(PlacedTile.isEmpty(tile)) return false;
-        tiles.add(lx+","+ly);
-        TileType type=PlacedTile.typeOf(tile);
+        short tile = get(lx, ly);
+        if (PlacedTile.isEmpty(tile)) return false;
+        tiles.add(lx + "," + ly);
+        TileType type = PlacedTile.typeOf(tile);
         // Crossroad/T-junction = road endpoint (complete)
-        if(type==TileType.ROAD_CROSS||type==TileType.ROAD_T) return true;
+        if (type == TileType.ROAD_CROSS || type == TileType.ROAD_T) return true;
         // Find the other road exit on this tile
-        boolean complete=true;
-        for(int d=0;d<4;d++) {
-            if(d==slot||d==TileType.opposite(slot)) continue;
-            if(PlacedTile.edgeOf(tile,d)==TileType.Edge.R) {
-                long dk=TileKingdomsGame.packPos(lx,ly,d);
-                if(!region.contains(dk)) complete &= bfsRoadComplete(lx,ly,d,region,tiles);
+        boolean complete = true;
+        for (int d = 0; d < 4; d++) {
+            if (d == slot || d == TileType.opposite(slot)) continue;
+            if (PlacedTile.edgeOf(tile, d) == TileType.Edge.R) {
+                long dk = TileKingdomsGame.packPos(lx, ly, d);
+                if (!region.contains(dk)) complete &= bfsRoadComplete(lx, ly, d, region, tiles);
             }
         }
         // Cross into neighbour at this slot
-        int nx=lx+DX[slot],ny=ly+DY[slot];
-        short nb=get(nx,ny);
-        if(PlacedTile.isEmpty(nb)) return false;
-        if(PlacedTile.edgeOf(nb,TileType.opposite(slot))==TileType.Edge.R)
-            complete &= bfsRoadComplete(nx,ny,TileType.opposite(slot),region,tiles);
+        int nx = lx + DX[slot], ny = ly + DY[slot];
+        short nb = get(nx, ny);
+        if (PlacedTile.isEmpty(nb)) return false;
+        if (PlacedTile.edgeOf(nb, TileType.opposite(slot)) == TileType.Edge.R)
+            complete &= bfsRoadComplete(nx, ny, TileType.opposite(slot), region, tiles);
         else return true; // road ends at city/monastery
         return complete;
     }
 
     // ── Monastery scoring ─────────────────────────────────────────────────────
-    private void scoreMonastery(int lx,int ly,Map<Long,Integer> claims,int nPlayers,
-                                int[] scores,int[] followersLeft,boolean onlyIfComplete) {
-        int count=0;
-        for(int dy=-1;dy<=1;dy++) for(int dx=-1;dx<=1;dx++) if(!isEmpty(lx+dx,ly+dy)) count++;
-        if(onlyIfComplete && count<9) return;
-        long key=TileKingdomsGame.packPos(lx,ly,TileKingdomsGame.SLOT_CENTER);
-        Integer owner=claims.get(key);
-        if(owner!=null&&owner>=0&&owner<scores.length) {
-            scores[owner]+=count;
-            if(count==9) { claims.remove(key); followersLeft[owner]++; }
+    private void scoreMonastery(int lx, int ly, Map<Long, Integer> claims, int nPlayers,
+                                int[] scores, int[] followersLeft, boolean onlyIfComplete) {
+        int count = 0;
+        for (int dy = -1; dy <= 1; dy++) for (int dx = -1; dx <= 1; dx++) if (!isEmpty(lx + dx, ly + dy)) count++;
+        if (onlyIfComplete && count < 9) return;
+        long key = TileKingdomsGame.packPos(lx, ly, TileKingdomsGame.SLOT_CENTER);
+        Integer owner = claims.get(key);
+        if (owner != null && owner >= 0 && owner < scores.length) {
+            scores[owner] += count;
+            if (count == 9) {
+                claims.remove(key);
+                followersLeft[owner]++;
+            }
         }
     }
 
     // ── Final scoring ─────────────────────────────────────────────────────────
-    public void scoreFinalAll(Map<Long,Integer> claims,int nPlayers,int[] scores,int[] followersLeft) {
-        Set<String> processed=new HashSet<>();
-        for(int gy=0;gy<SIZE;gy++) for(int gx=0;gx<SIZE;gx++) {
-            int lx=gx-HALF,ly=gy-HALF;
-            short tile=get(lx,ly);
-            if(PlacedTile.isEmpty(tile)) continue;
-            TileType type=PlacedTile.typeOf(tile);
-            for(int dir=0;dir<4;dir++) {
-                TileType.Edge e=PlacedTile.edgeOf(tile,dir);
-                if(e==TileType.Edge.F) continue;
-                String rid=getRegionId(lx,ly,dir);
-                if(processed.contains(rid)) continue;
-                processed.add(rid);
-                if(e==TileType.Edge.C) scoreCity(lx,ly,dir,claims,nPlayers,scores,followersLeft,false);
-                else if(e==TileType.Edge.R) scoreRoad(lx,ly,dir,claims,nPlayers,scores,followersLeft,false);
+    public void scoreFinalAll(Map<Long, Integer> claims, int nPlayers, int[] scores, int[] followersLeft) {
+        Set<String> processed = new HashSet<>();
+        for (int gy = 0; gy < SIZE; gy++)
+            for (int gx = 0; gx < SIZE; gx++) {
+                int lx = gx - HALF, ly = gy - HALF;
+                short tile = get(lx, ly);
+                if (PlacedTile.isEmpty(tile)) continue;
+                TileType type = PlacedTile.typeOf(tile);
+                for (int dir = 0; dir < 4; dir++) {
+                    TileType.Edge e = PlacedTile.edgeOf(tile, dir);
+                    if (e == TileType.Edge.F) continue;
+                    String rid = getRegionId(lx, ly, dir);
+                    if (processed.contains(rid)) continue;
+                    processed.add(rid);
+                    if (e == TileType.Edge.C) scoreCity(lx, ly, dir, claims, nPlayers, scores, followersLeft, false);
+                    else if (e == TileType.Edge.R)
+                        scoreRoad(lx, ly, dir, claims, nPlayers, scores, followersLeft, false);
+                }
+                if (type != null && type.monastery)
+                    scoreMonastery(lx, ly, claims, nPlayers, scores, followersLeft, false);
             }
-            if(type!=null&&type.monastery) scoreMonastery(lx,ly,claims,nPlayers,scores,followersLeft,false);
-        }
     }
 
     // ── Ownership helpers ─────────────────────────────────────────────────────
-    private int[] getMajorityOwners(Set<Long> region,Map<Long,Integer> claims,int nPlayers) {
-        int[] count=new int[nPlayers];
-        for(Long pos:region) { Integer o=claims.get(pos); if(o!=null&&o>=0&&o<nPlayers) count[o]++; }
-        int max=0; for(int c:count) max=Math.max(max,c);
-        if(max==0) return new int[0];
-        List<Integer> winners=new ArrayList<>();
-        for(int i=0;i<nPlayers;i++) if(count[i]==max) winners.add(i);
+    private int[] getMajorityOwners(Set<Long> region, Map<Long, Integer> claims, int nPlayers) {
+        int[] count = new int[nPlayers];
+        for (Long pos : region) {
+            Integer o = claims.get(pos);
+            if (o != null && o >= 0 && o < nPlayers) count[o]++;
+        }
+        int max = 0;
+        for (int c : count) max = Math.max(max, c);
+        if (max == 0) return new int[0];
+        List<Integer> winners = new ArrayList<>();
+        for (int i = 0; i < nPlayers; i++) if (count[i] == max) winners.add(i);
         return winners.stream().mapToInt(Integer::intValue).toArray();
     }
 
-    private void returnFollowers(Set<Long> region,Map<Long,Integer> claims,int[] followersLeft) {
-        for(Long pos:new HashSet<>(region)) {
-            Integer o=claims.remove(pos);
-            if(o!=null&&o>=0&&o<followersLeft.length) followersLeft[o]++;
+    private void returnFollowers(Set<Long> region, Map<Long, Integer> claims, int[] followersLeft) {
+        for (Long pos : new HashSet<>(region)) {
+            Integer o = claims.remove(pos);
+            if (o != null && o >= 0 && o < followersLeft.length) followersLeft[o]++;
         }
     }
 
     // ── Serialisation ─────────────────────────────────────────────────────────
-    public short[] getGridCopy()  { return Arrays.copyOf(grid,grid.length); }
-    public int[]   getBounds()    { return new int[]{minX-HALF,minY-HALF,maxX-HALF,maxY-HALF}; }
+    public short[] getGridCopy() {
+        return Arrays.copyOf(grid, grid.length);
+    }
+
+    public int[] getBounds() {
+        return new int[]{minX - HALF, minY - HALF, maxX - HALF, maxY - HALF};
+    }
 }

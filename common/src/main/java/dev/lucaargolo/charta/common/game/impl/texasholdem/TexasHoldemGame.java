@@ -27,11 +27,13 @@ import java.util.function.Predicate;
 public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
 
     // --- Action codes encoded in GamePlay.slot() ---
-    public static final int ACTION_FOLD         = 100;
-    public static final int ACTION_CALL         = 101;
-    public static final int ACTION_RAISE_MIN    = 102;
-    public static final int ACTION_ALL_IN       = 103;
-    /** Custom raise: amount encoded as (ACTION_RAISE_CUSTOM + chips), sent from client. */
+    public static final int ACTION_FOLD = 100;
+    public static final int ACTION_CALL = 101;
+    public static final int ACTION_RAISE_MIN = 102;
+    public static final int ACTION_ALL_IN = 103;
+    /**
+     * Custom raise: amount encoded as (ACTION_RAISE_CUSTOM + chips), sent from client.
+     */
     public static final int ACTION_RAISE_CUSTOM = 200;
 
     // -------------------------------------------------------------------------
@@ -49,7 +51,9 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
     //   1 = raise by 1×BB, 5 = raise by 5×BB.
     // -------------------------------------------------------------------------
 
-    /** Chips option — displayMultiplier=100 so the client widget shows "Starting Chips: 1000" instead of "10". */
+    /**
+     * Chips option — displayMultiplier=100 so the client widget shows "Starting Chips: 1000" instead of "10".
+     */
     private final GameOption.Number STARTING_CHIPS_OPT = new GameOption.Number(
             5, 1, 20, 100,
             Component.translatable("rule.charta.texas_holdem.starting_chips"),
@@ -61,41 +65,51 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
             Component.translatable("rule.charta.texas_holdem.big_blind.description"));
 
 
-    /** Returns actual starting chips (stored value × 100). */
+    /**
+     * Returns actual starting chips (stored value × 100).
+     */
     private int getStartingChips() {
         return STARTING_CHIPS_OPT.get() * 100;
     }
 
-    /** Public alias used by TexasHoldemMenu to expose starting chips to the client. */
+    /**
+     * Public alias used by TexasHoldemMenu to expose starting chips to the client.
+     */
     public int getStartingChipsPublic() {
         return getStartingChips();
     }
 
-    /** Returns big blind chip amount. */
+    /**
+     * Returns big blind chip amount.
+     */
     private int getBigBlind() {
         return BIG_BLIND_OPT.get();
     }
 
-    /** Minimum raise = 1 big blind. */
+    /**
+     * Minimum raise = 1 big blind.
+     */
     private int getRaiseAmount() {
         return getBigBlind();
     }
 
-    /** Public accessor for ContainerData sync. */
+    /**
+     * Public accessor for ContainerData sync.
+     */
     public int getRaiseAmountPublic() {
         return getRaiseAmount();
     }
 
     // --- Synced game state (public for TexasHoldemMenu ContainerData) ---
-    public int[]     chips;      // chips per player index
-    public int[]     roundBets;  // amount bet this round by each player index
-    public int[]     totalCommitted; // total chips committed to pot this entire hand
+    public int[] chips;      // chips per player index
+    public int[] roundBets;  // amount bet this round by each player index
+    public int[] totalCommitted; // total chips committed to pot this entire hand
     public boolean[] folded;     // folded[i] = true if player i has folded
     public boolean[] allIn;      // allIn[i] = true if player i is all-in
-    public int  pot;
-    public int  currentBet;      // the current highest bet in this round
-    public int  dealerIndex;
-    public int  phaseOrdinal;    // Phase ordinal, synced as int
+    public int pot;
+    public int currentBet;      // the current highest bet in this round
+    public int dealerIndex;
+    public int phaseOrdinal;    // Phase ordinal, synced as int
 
     // --- Internal server-side state ---
     private final LinkedList<Integer> pendingActors = new LinkedList<>();
@@ -104,7 +118,7 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
     // --- Slots ---
     // slots 0-4: individual community card positions (board cards), face-up
     public static final int SLOT_COMMUNITY_FIRST = 0;
-    public static final int SLOT_COMMUNITY_LAST  = 4;
+    public static final int SLOT_COMMUNITY_LAST = 4;
 
     public final GameSlot[] communitySlots = new GameSlot[5];
 
@@ -122,28 +136,35 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
     public TexasHoldemGame(List<CardPlayer> players, Deck deck) {
         super(players, deck);
         int n = Math.max(players.size(), 1);
-        this.chips          = new int[n];
-        this.roundBets      = new int[n];
+        this.chips = new int[n];
+        this.roundBets = new int[n];
         this.totalCommitted = new int[n];
-        this.folded         = new boolean[n];
-        this.allIn          = new boolean[n];
+        this.folded = new boolean[n];
+        this.allIn = new boolean[n];
         this.phaseOrdinal = Phase.PREFLOP.ordinal();
-        this.dealerIndex  = 0;
+        this.dealerIndex = 0;
 
         // 5 community card slots spread across the board.
         // TABLE_WIDTH=160, 5 cards×25 + 4 gaps×8 = 157 → startX = 1.5 (max spacing)
-        float cardW  = CardImage.WIDTH;    // 25
-        float cardH  = CardImage.HEIGHT;   // 35
-        float gap    = 8f;
+        float cardW = CardImage.WIDTH;    // 25
+        float cardH = CardImage.HEIGHT;   // 35
+        float gap = 8f;
         float totalW = 5 * cardW + 4 * gap; // 157
         float startX = (CardTableBlockEntity.TABLE_WIDTH - totalW) / 2f; // 1.5
-        float comY   = CardTableBlockEntity.TABLE_HEIGHT / 2f - cardH / 2f - 5f;
+        float comY = CardTableBlockEntity.TABLE_HEIGHT / 2f - cardH / 2f - 5f;
 
         for (int i = 0; i < 5; i++) {
             final float slotX = startX + i * (cardW + gap);
             communitySlots[i] = addSlot(new GameSlot(new LinkedList<>(), slotX, comY, 0f, 0f) {
-                @Override public boolean canInsertCard(CardPlayer p, List<Card> c, int idx) { return false; }
-                @Override public boolean canRemoveCard(CardPlayer p, int idx)               { return false; }
+                @Override
+                public boolean canInsertCard(CardPlayer p, List<Card> c, int idx) {
+                    return false;
+                }
+
+                @Override
+                public boolean canRemoveCard(CardPlayer p, int idx) {
+                    return false;
+                }
             });
         }
         // drawPile is a plain LinkedList — NOT a GameSlot; no addSlot() needed.
@@ -188,10 +209,12 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
             public boolean canRemoveCard(CardPlayer p, int index) {
                 return false; // hole cards stay in hand — view-only
             }
+
             @Override
             public boolean canInsertCard(CardPlayer p, List<Card> cards, int index) {
                 return false; // game places cards via dealCards(), not via UI drag
             }
+
             @Override
             public boolean removeAll() {
                 return false;
@@ -228,10 +251,14 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
     }
 
     @Override
-    public int getMinPlayers() { return 2; }
+    public int getMinPlayers() {
+        return 2;
+    }
 
     @Override
-    public int getMaxPlayers() { return 8; }
+    public int getMaxPlayers() {
+        return 8;
+    }
 
     // =========================================================================
     // canPlay – used by the framework for bot/human action validation
@@ -246,11 +273,11 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
         if (idx < 0) return false;
 
         return switch (action) {
-            case ACTION_FOLD        -> !folded[idx];
-            case ACTION_CALL        -> !folded[idx] && !allIn[idx];
-            case ACTION_RAISE_MIN   -> !folded[idx] && !allIn[idx] && chips[idx] > 0;
-            case ACTION_ALL_IN      -> !folded[idx] && !allIn[idx] && chips[idx] > 0;
-            default                 -> action >= ACTION_RAISE_CUSTOM
+            case ACTION_FOLD -> !folded[idx];
+            case ACTION_CALL -> !folded[idx] && !allIn[idx];
+            case ACTION_RAISE_MIN -> !folded[idx] && !allIn[idx] && chips[idx] > 0;
+            case ACTION_ALL_IN -> !folded[idx] && !allIn[idx] && chips[idx] > 0;
+            default -> action >= ACTION_RAISE_CUSTOM
                     && !folded[idx] && !allIn[idx] && chips[idx] > 0;
         };
     }
@@ -312,21 +339,23 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
 
         resetRound();
         isGameReady = false;
-        isGameOver  = false;
+        isGameOver = false;
         table(Component.translatable("message.charta.game_started"));
         dealNewHand();
     }
 
-    /** Prepares and deals a fresh hand. */
+    /**
+     * Prepares and deals a fresh hand.
+     */
     private void dealNewHand() {
         int n = players.size();
 
         // Clear state
         Arrays.fill(roundBets, 0);
         Arrays.fill(totalCommitted, 0);
-        Arrays.fill(folded,    false);
-        Arrays.fill(allIn,     false);
-        pot        = 0;
+        Arrays.fill(folded, false);
+        Arrays.fill(allIn, false);
+        pot = 0;
         currentBet = 0;
         revealedPlayers.clear();
         pendingActors.clear();
@@ -368,7 +397,8 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
                     p.playSound(ModSounds.CARD_DRAW.get());
                     dealFromPile(p, 1);
                 });
-                scheduledActions.add(() -> {}); // delay tick
+                scheduledActions.add(() -> {
+                }); // delay tick
             }
         }
 
@@ -376,15 +406,17 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
         scheduledActions.add(this::postBlindsAndStart);
 
         isGameReady = false;
-        isGameOver  = false;
+        isGameOver = false;
     }
 
-    /** Posts small & big blinds, then sets up preflop state.
-     *  The actual betting round is started by {@link #runGame()} once
-     *  all scheduled actions have been processed and {@code isGameReady} is set. */
+    /**
+     * Posts small & big blinds, then sets up preflop state.
+     * The actual betting round is started by {@link #runGame()} once
+     * all scheduled actions have been processed and {@code isGameReady} is set.
+     */
     private void postBlindsAndStart() {
         int n = players.size();
-        int bigBlind   = getBigBlind();
+        int bigBlind = getBigBlind();
         int smallBlind = bigBlind / 2;
 
         int sbIdx = (dealerIndex + 1) % n;
@@ -480,7 +512,9 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
         });
     }
 
-    /** Processes a betting action for the player at playerIdx. */
+    /**
+     * Processes a betting action for the player at playerIdx.
+     */
     public void handleAction(int playerIdx, int action) {
         if (playerIdx < 0 || playerIdx >= players.size()) return;
         CardPlayer player = players.get(playerIdx);
@@ -497,10 +531,10 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
                     play(player, Component.translatable("message.charta.texas_holdem.checked"));
                 } else {
                     int paid = Math.min(owed, chips[playerIdx]);
-                    chips[playerIdx]          -= paid;
-                    roundBets[playerIdx]       += paid;
-                    totalCommitted[playerIdx]  += paid;
-                    pot                        += paid;
+                    chips[playerIdx] -= paid;
+                    roundBets[playerIdx] += paid;
+                    totalCommitted[playerIdx] += paid;
+                    pot += paid;
                     if (chips[playerIdx] == 0) {
                         allIn[playerIdx] = true;
                         play(player, Component.translatable("message.charta.texas_holdem.all_in", roundBets[playerIdx]));
@@ -530,11 +564,11 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
 
     private void doRaise(int playerIdx, CardPlayer player, int raiseBy) {
         int newBet = roundBets[playerIdx] + raiseBy;
-        int paid   = Math.min(raiseBy, chips[playerIdx]);
-        chips[playerIdx]          -= paid;
-        roundBets[playerIdx]       += paid;
-        totalCommitted[playerIdx]  += paid;
-        pot                        += paid;
+        int paid = Math.min(raiseBy, chips[playerIdx]);
+        chips[playerIdx] -= paid;
+        roundBets[playerIdx] += paid;
+        totalCommitted[playerIdx] += paid;
+        pot += paid;
 
         if (chips[playerIdx] == 0) {
             allIn[playerIdx] = true;
@@ -557,7 +591,9 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
         return getRaiseAmount();
     }
 
-    /** Builds the list of players who must act, starting from startIdx, with lastToActIdx acting last. */
+    /**
+     * Builds the list of players who must act, starting from startIdx, with lastToActIdx acting last.
+     */
     private void buildPendingActors(int startIdx, int lastToActIdx) {
         pendingActors.clear();
         int n = players.size();
@@ -575,7 +611,9 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
         }
     }
 
-    /** After a raise, all non-folded, non-allIn players except the raiser must act again. */
+    /**
+     * After a raise, all non-folded, non-allIn players except the raiser must act again.
+     */
     private void rebuildPendingActorsAfterRaise(int raiserIdx) {
         pendingActors.clear();
         int n = players.size();
@@ -637,7 +675,9 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
         }
     }
 
-    /** Sets up betting order for post-flop rounds (first active player left of dealer). */
+    /**
+     * Sets up betting order for post-flop rounds (first active player left of dealer).
+     */
     private void startPostFlopBetting() {
         int n = players.size();
         int startIdx = (dealerIndex + 1) % n;
@@ -664,7 +704,10 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
         }
         revealedPlayers.addAll(contenders);
 
-        if (contenders.isEmpty()) { onHandComplete(); return; }
+        if (contenders.isEmpty()) {
+            onHandComplete();
+            return;
+        }
 
         // ── Side-pot calculation ──────────────────────────────────────────────
         // Each player can only win up to their own total bet from each opponent.
@@ -703,7 +746,10 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
             for (int i = 0; i < n; i++) {
                 sidePot += Math.min(Math.max(0, totalCommitted[i] - prevCap), cap - prevCap);
             }
-            if (sidePot <= 0) { prevCap = cap; continue; }
+            if (sidePot <= 0) {
+                prevCap = cap;
+                continue;
+            }
 
             // Find best hand among players eligible for this side pot
             long bestScore = Long.MIN_VALUE;
@@ -762,19 +808,29 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
 
         pot = 0;
 
-        for (int i = 0; i < 60; i++) scheduledActions.add(() -> {});
+        for (int i = 0; i < 60; i++)
+            scheduledActions.add(() -> {
+            });
         scheduledActions.add(this::onHandComplete);
         isGameReady = false;
     }
 
-    /** Called when all but one player folds mid-round. */
+    /**
+     * Called when all but one player folds mid-round.
+     */
     private void awardPotToLastPlayer() {
         // Find the single non-folded player
         int lastIdx = -1;
         for (int i = 0; i < players.size(); i++) {
-            if (!folded[i]) { lastIdx = i; break; }
+            if (!folded[i]) {
+                lastIdx = i;
+                break;
+            }
         }
-        if (lastIdx < 0) { onHandComplete(); return; }
+        if (lastIdx < 0) {
+            onHandComplete();
+            return;
+        }
 
         // The last player can win at most (their own committed × number of players) from the pot.
         // Any excess goes back to the players who over-contributed (folded with more chips in).
@@ -783,9 +839,9 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
         int[] refunds = new int[players.size()];
         for (int i = 0; i < players.size(); i++) {
             int contrib = totalCommitted[i];
-            int take    = Math.min(contrib, cap);
-            winnable   += take;
-            refunds[i]  = contrib - take;
+            int take = Math.min(contrib, cap);
+            winnable += take;
+            refunds[i] = contrib - take;
         }
 
         chips[lastIdx] += winnable;
@@ -905,9 +961,9 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
     private void resetRound() {
         Arrays.fill(roundBets, 0);
         Arrays.fill(totalCommitted, 0);
-        Arrays.fill(folded,    false);
-        Arrays.fill(allIn,     false);
-        pot        = 0;
+        Arrays.fill(folded, false);
+        Arrays.fill(allIn, false);
+        pot = 0;
         currentBet = 0;
     }
 
@@ -922,7 +978,9 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
         }
     }
 
-    /** Players still in the hand (not folded), including all-in players. */
+    /**
+     * Players still in the hand (not folded), including all-in players.
+     */
     private long countActivePlayers() {
         long count = 0;
         for (int i = 0; i < players.size(); i++) {
@@ -931,7 +989,9 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
         return count;
     }
 
-    /** Players who can still bet (not folded, not all-in, have chips). */
+    /**
+     * Players who can still bet (not folded, not all-in, have chips).
+     */
     private long countBettingPlayers() {
         long count = 0;
         for (int i = 0; i < players.size(); i++) {
@@ -940,25 +1000,29 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
         return count;
     }
 
-    /** Preflop hand strength: 0.0–1.0 based on hole card ranks. */
+    /**
+     * Preflop hand strength: 0.0–1.0 based on hole card ranks.
+     */
     private float evaluatePreflopStrength(List<Card> hand) {
         if (hand.size() < 2) return 0.3f;
 
         int r1 = getRankValue(hand.get(0));
         int r2 = getRankValue(hand.get(1));
-        boolean suited  = hand.get(0).suit() == hand.get(1).suit();
-        boolean paired  = hand.get(0).rank() == hand.get(1).rank();
+        boolean suited = hand.get(0).suit() == hand.get(1).suit();
+        boolean paired = hand.get(0).rank() == hand.get(1).rank();
         boolean connected = Math.abs(r1 - r2) == 1;
 
         float base = (r1 + r2) / 28f; // normalised by max (14+14=28)
-        if (paired)    base += 0.20f;
-        if (suited)    base += 0.10f;
+        if (paired) base += 0.20f;
+        if (suited) base += 0.10f;
         if (connected) base += 0.05f;
 
         return Math.min(base, 1.0f);
     }
 
-    /** Returns the Ace-high rank value (Ace = 14). */
+    /**
+     * Returns the Ace-high rank value (Ace = 14).
+     */
     private static int getRankValue(Card card) {
         Rank rank = card.rank();
         if (rank == Ranks.ACE) return 14;
@@ -985,19 +1049,20 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
     /**
      * Evaluates the best 5-card poker hand from a set of 2-7 cards.
      * Returns a score where a higher value beats a lower value.
-     *
+     * <p>
      * Score = category * BASE + pack5(ranks)
-     *   category: 8=Str.Flush, 7=Quads, 6=FullHouse, 5=Flush,
-     *             4=Straight, 3=Trips, 2=TwoPair, 1=OnePair, 0=HighCard
-     *   pack5: five rank values packed big-endian in base-100
-     *          max = 14*100^4 + ... ≈ 1.41×10^9  <  BASE = 10^10  ✓
+     * category: 8=Str.Flush, 7=Quads, 6=FullHouse, 5=Flush,
+     * 4=Straight, 3=Trips, 2=TwoPair, 1=OnePair, 0=HighCard
+     * pack5: five rank values packed big-endian in base-100
+     * max = 14*100^4 + ... ≈ 1.41×10^9  <  BASE = 10^10  ✓
      */
     public static final class HandEvaluator {
 
-        public static final long BASE      = 10_000_000_000L; // 10^10
+        public static final long BASE = 10_000_000_000L; // 10^10
         public static final long MAX_SCORE = 9L * BASE;
 
-        private HandEvaluator() {}
+        private HandEvaluator() {
+        }
 
         // ------------------------------------------------------------------ //
         // Public API
@@ -1008,10 +1073,10 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
             if (n < 5) return 0L;
             long best = Long.MIN_VALUE;
             for (int i = 0; i < n - 4; i++)
-                for (int j = i+1; j < n-3; j++)
-                    for (int k = j+1; k < n-2; k++)
-                        for (int l = k+1; l < n-1; l++)
-                            for (int m = l+1; m < n; m++) {
+                for (int j = i + 1; j < n - 3; j++)
+                    for (int k = j + 1; k < n - 2; k++)
+                        for (int l = k + 1; l < n - 1; l++)
+                            for (int m = l + 1; m < n; m++) {
                                 long s = eval5(cards.get(i), cards.get(j), cards.get(k),
                                         cards.get(l), cards.get(m));
                                 if (s > best) best = s;
@@ -1022,9 +1087,9 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
         public static String getHandName(List<Card> cards) {
             long best = evaluate(cards);
             if (best <= 0) return "High Card";
-            int cat = (int)(best / BASE);
+            int cat = (int) (best / BASE);
             return switch (cat) {
-                case 8 -> (best % BASE) / (long)Math.pow(100, 4) == 14 ? "Royal Flush" : "Straight Flush";
+                case 8 -> (best % BASE) / (long) Math.pow(100, 4) == 14 ? "Royal Flush" : "Straight Flush";
                 case 7 -> "Four of a Kind";
                 case 6 -> "Full House";
                 case 5 -> "Flush";
@@ -1041,19 +1106,19 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
         // ------------------------------------------------------------------ //
 
         private static long eval5(Card c1, Card c2, Card c3, Card c4, Card c5) {
-            int[] r = { rv(c1), rv(c2), rv(c3), rv(c4), rv(c5) };
+            int[] r = {rv(c1), rv(c2), rv(c3), rv(c4), rv(c5)};
             Arrays.sort(r); // ascending
 
-            boolean flush    = c1.suit()==c2.suit() && c2.suit()==c3.suit()
-                    && c3.suit()==c4.suit() && c4.suit()==c5.suit();
+            boolean flush = c1.suit() == c2.suit() && c2.suit() == c3.suit()
+                    && c3.suit() == c4.suit() && c4.suit() == c5.suit();
             boolean straight = isStraight(r);
 
             // Frequencies: group ranks by how many times they appear
-            Map<Integer,Integer> freq = new HashMap<>();
+            Map<Integer, Integer> freq = new HashMap<>();
             for (int rank : r) freq.merge(rank, 1, Integer::sum);
 
             // Sort groups: primary = count desc, secondary = rank desc
-            List<Map.Entry<Integer,Integer>> groups = new ArrayList<>(freq.entrySet());
+            List<Map.Entry<Integer, Integer>> groups = new ArrayList<>(freq.entrySet());
             groups.sort((a, b) -> a.getValue().equals(b.getValue())
                     ? b.getKey() - a.getKey()    // same count → higher rank first
                     : b.getValue() - a.getValue()); // else higher count first
@@ -1062,36 +1127,40 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
             // e.g. Full House KKK22 → [13,13,13,2,2]
             int[] ord = new int[5];
             int pos = 0;
-            for (Map.Entry<Integer,Integer> e : groups)
+            for (Map.Entry<Integer, Integer> e : groups)
                 for (int i = 0; i < e.getValue(); i++)
                     ord[pos++] = e.getKey();
 
             int topCount = groups.get(0).getValue();
             boolean hasTrip = topCount == 3;
             boolean hasPair = groups.stream().anyMatch(e -> e.getValue() == 2);
-            boolean hasTwoPairs = groups.stream().filter(e -> e.getValue()==2).count() >= 2;
+            boolean hasTwoPairs = groups.stream().filter(e -> e.getValue() == 2).count() >= 2;
 
-            if (straight && flush)              return 8*BASE + straightPack(r);
-            if (topCount == 4)                  return 7*BASE + pack5(ord);
-            if (hasTrip && hasPair)             return 6*BASE + pack5(ord);
-            if (flush)                          return 5*BASE + pack5(r[4],r[3],r[2],r[1],r[0]);
-            if (straight)                       return 4*BASE + straightPack(r);
-            if (hasTrip)                        return 3*BASE + pack5(ord);
-            if (hasTwoPairs)                    return 2*BASE + pack5(ord);
-            if (hasPair)                        return 1*BASE + pack5(ord);
-            return pack5(r[4],r[3],r[2],r[1],r[0]); // High card
+            if (straight && flush) return 8 * BASE + straightPack(r);
+            if (topCount == 4) return 7 * BASE + pack5(ord);
+            if (hasTrip && hasPair) return 6 * BASE + pack5(ord);
+            if (flush) return 5 * BASE + pack5(r[4], r[3], r[2], r[1], r[0]);
+            if (straight) return 4 * BASE + straightPack(r);
+            if (hasTrip) return 3 * BASE + pack5(ord);
+            if (hasTwoPairs) return 2 * BASE + pack5(ord);
+            if (hasPair) return 1 * BASE + pack5(ord);
+            return pack5(r[4], r[3], r[2], r[1], r[0]); // High card
         }
 
-        /** Packs 5 rank values big-endian in base-100. */
+        /**
+         * Packs 5 rank values big-endian in base-100.
+         */
         private static long pack5(int[] ord) {
             return pack5(ord[0], ord[1], ord[2], ord[3], ord[4]);
         }
 
         private static long pack5(int a, int b, int c, int d, int e) {
-            return ((((long)a * 100 + b) * 100 + c) * 100 + d) * 100 + e;
+            return ((((long) a * 100 + b) * 100 + c) * 100 + d) * 100 + e;
         }
 
-        /** Straight pack — handle wheel (A-2-3-4-5 → 5-high). */
+        /**
+         * Straight pack — handle wheel (A-2-3-4-5 → 5-high).
+         */
         private static long straightPack(int[] sorted) {
             // Wheel: sorted=[2,3,4,5,14] → top card is 5
             if (sorted[4] == 14 && sorted[0] == 2 && sorted[3] == 5)
@@ -1100,10 +1169,10 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
         }
 
         private static boolean isStraight(int[] sorted) {
-            boolean normal = sorted[4]-sorted[0]==4 && sorted[1]==sorted[0]+1
-                    && sorted[2]==sorted[1]+1 && sorted[3]==sorted[2]+1;
-            boolean wheel  = sorted[4]==14 && sorted[0]==2 && sorted[1]==3
-                    && sorted[2]==4  && sorted[3]==5;
+            boolean normal = sorted[4] - sorted[0] == 4 && sorted[1] == sorted[0] + 1
+                    && sorted[2] == sorted[1] + 1 && sorted[3] == sorted[2] + 1;
+            boolean wheel = sorted[4] == 14 && sorted[0] == 2 && sorted[1] == 3
+                    && sorted[2] == 4 && sorted[3] == 5;
             return normal || wheel;
         }
 

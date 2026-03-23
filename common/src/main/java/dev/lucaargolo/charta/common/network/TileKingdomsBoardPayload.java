@@ -1,6 +1,7 @@
-package dev.lucaargolo.charta.common.game.impl.tilekingdoms;
+package dev.lucaargolo.charta.common.network;
 
 import dev.lucaargolo.charta.common.ChartaMod;
+import dev.lucaargolo.charta.common.game.impl.tilekingdoms.TileKingdomsMenu;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;

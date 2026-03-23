@@ -44,9 +44,9 @@ public class AutoPlayer implements CardPlayer {
     @Override
     public void afterPlay(Consumer<GamePlay> consumer) {
         this.play.thenAccept(play -> {
-            try{
+            try {
                 consumer.accept(play);
-            }catch (Exception e) {
+            } catch (Exception e) {
                 ChartaMod.LOGGER.error("Error while handling {}'s Card Play. ", this.getName().getString(), e);
             }
         });
@@ -60,13 +60,13 @@ public class AutoPlayer implements CardPlayer {
 
     @Override
     public void tick(Game<?, ?> game) {
-        if(game.getCurrentPlayer() == this && !play.isDone()) {
+        if (game.getCurrentPlayer() == this && !play.isDone()) {
             int threshold = (int) Mth.lerp(intelligence, 50, 20);
             threshold += random.nextInt(-5, 40);
-            if(playAge > threshold) {
+            if (playAge > threshold) {
                 GamePlay cardPlay = game.getBestPlay(this);
                 play(cardPlay);
-            }else{
+            } else {
                 playAge++;
             }
         }

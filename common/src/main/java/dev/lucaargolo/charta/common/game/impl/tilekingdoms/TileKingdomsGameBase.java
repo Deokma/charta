@@ -31,8 +31,12 @@ public abstract class TileKingdomsGameBase extends Game<TileKingdomsGame, TileKi
     }
 
     @Override
-    public Predicate<Deck> getDeckPredicate() { return deck -> true; }
+    public Predicate<Deck> getDeckPredicate() {
+        return deck -> true;
+    }
 
     @Override
-    public Predicate<Card> getCardPredicate() { return card -> false; } // no cards used
+    public Predicate<Card> getCardPredicate() {
+        return card -> false;
+    } // no cards used
 }

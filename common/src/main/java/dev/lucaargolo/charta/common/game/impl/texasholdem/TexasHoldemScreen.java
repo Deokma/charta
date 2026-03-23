@@ -23,8 +23,8 @@ public class TexasHoldemScreen extends GameScreen<TexasHoldemGame, TexasHoldemMe
     private static final ResourceLocation TEXTURE = ChartaMod.id("textures/gui/texas_holdem_bg.png");
 
     // Main action buttons (3): Fold, Check/Call, All-In
-    private static final int BTN_W   = 56;
-    private static final int BTN_H   = 20;
+    private static final int BTN_W = 56;
+    private static final int BTN_H = 20;
     private static final int BTN_GAP = 6;
 
     // Raise button (separate, opens sub-panel)
@@ -35,23 +35,29 @@ public class TexasHoldemScreen extends GameScreen<TexasHoldemGame, TexasHoldemMe
     private static final int QH = 18;
     private static final int QG = 4;
 
-    private static final int COLOR_FOLD     = 0xAA2222;
-    private static final int COLOR_CHECK    = 0x228844;
-    private static final int COLOR_RAISE    = 0xBB7700;
-    private static final int COLOR_ALLIN    = 0x7722AA;
+    private static final int COLOR_FOLD = 0xAA2222;
+    private static final int COLOR_CHECK = 0x228844;
+    private static final int COLOR_RAISE = 0xBB7700;
+    private static final int COLOR_ALLIN = 0x7722AA;
     private static final int COLOR_INACTIVE = 0x444444;
-    private static final int COLOR_QUICK    = 0x445588;
+    private static final int COLOR_QUICK = 0x445588;
 
-    /** Whether the raise sub-panel is open. */
+    /**
+     * Whether the raise sub-panel is open.
+     */
     private boolean raiseMenuOpen = false;
-    /** Custom raise field value being typed. */
+    /**
+     * Custom raise field value being typed.
+     */
     private String customRaiseText = "";
-    /** Whether the custom field is focused. */
+    /**
+     * Whether the custom field is focused.
+     */
     private boolean customFieldFocused = false;
 
     public TexasHoldemScreen(TexasHoldemMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
-        this.imageWidth  = 256;
+        this.imageWidth = 256;
         this.imageHeight = 230;
     }
 
@@ -66,7 +72,7 @@ public class TexasHoldemScreen extends GameScreen<TexasHoldemGame, TexasHoldemMe
             for (int i = 0; i < n; i++) {
                 chips[i] = menu.getChips(i);
                 if (menu.isFolded(i)) foldedMask |= (1 << i);
-                if (menu.isAllIn(i))  allInMask  |= (1 << i);
+                if (menu.isAllIn(i)) allInMask |= (1 << i);
             }
             ChartaModClient.TABLE_POKER_CHIPS.put(tablePos, chips);
             ChartaModClient.TABLE_POKER_GAME_SLOT_COUNT.put(tablePos, menu.getGame().getSlots().size());
@@ -80,21 +86,22 @@ public class TexasHoldemScreen extends GameScreen<TexasHoldemGame, TexasHoldemMe
     // ── colour helpers ─────────────────────────────────────────────────────────
     private static int lighten(int rgb) {
         int r = Math.min(255, ((rgb >> 16) & 0xFF) + 70);
-        int g2= Math.min(255, ((rgb >>  8) & 0xFF) + 70);
-        int b = Math.min(255, ( rgb        & 0xFF) + 70);
+        int g2 = Math.min(255, ((rgb >> 8) & 0xFF) + 70);
+        int b = Math.min(255, (rgb & 0xFF) + 70);
         return (r << 16) | (g2 << 8) | b;
     }
+
     private static int darken(int rgb) {
         int r = Math.max(0, ((rgb >> 16) & 0xFF) - 55);
-        int g2= Math.max(0, ((rgb >>  8) & 0xFF) - 55);
-        int b = Math.max(0, ( rgb        & 0xFF) - 55);
+        int g2 = Math.max(0, ((rgb >> 8) & 0xFF) - 55);
+        int b = Math.max(0, (rgb & 0xFF) - 55);
         return (r << 16) | (g2 << 8) | b;
     }
 
     // ── renderBg ───────────────────────────────────────────────────────────────
     @Override
     protected void renderBg(@NotNull GuiGraphics g, float partialTick, int mouseX, int mouseY) {
-        int bgTop    = 40;
+        int bgTop = 40;
         int bgBottom = height - 63;
 
         g.blit(TEXTURE, 0, bgTop, 0, 0, width, bgBottom - bgTop, width, bgBottom - bgTop);
@@ -103,7 +110,7 @@ public class TexasHoldemScreen extends GameScreen<TexasHoldemGame, TexasHoldemMe
                 && menu.getPhase() != TexasHoldemGame.Phase.SHOWDOWN;
         int myIdx = menu.getGame().getPlayers().indexOf(menu.getCardPlayer());
         boolean isFolded = myIdx >= 0 && menu.isFolded(myIdx);
-        boolean isAllIn  = myIdx >= 0 && menu.isAllIn(myIdx);
+        boolean isAllIn = myIdx >= 0 && menu.isAllIn(myIdx);
 
         if (!myTurn || isFolded || isAllIn) {
             raiseMenuOpen = false;
@@ -120,10 +127,10 @@ public class TexasHoldemScreen extends GameScreen<TexasHoldemGame, TexasHoldemMe
         int bx = (width - totalW) / 2;
         int by = bgBottom - BTN_H - 6;
 
-        int foldX   = bx;
-        int callX   = bx + BTN_W + BTN_GAP;
-        int raiseX  = callX + BTN_W + BTN_GAP;
-        int allInX  = raiseX + RAISE_BTN_W + BTN_GAP;
+        int foldX = bx;
+        int callX = bx + BTN_W + BTN_GAP;
+        int raiseX = callX + BTN_W + BTN_GAP;
+        int allInX = raiseX + RAISE_BTN_W + BTN_GAP;
 
         drawBtn(g, mouseX, mouseY, foldX, by, BTN_W,
                 Component.translatable("button.charta.texas_holdem.fold"), true, COLOR_FOLD);
@@ -194,18 +201,20 @@ public class TexasHoldemScreen extends GameScreen<TexasHoldemGame, TexasHoldemMe
         }
     }
 
-    /** Draw a button with variable width. */
+    /**
+     * Draw a button with variable width.
+     */
     private void drawBtn(GuiGraphics g, int mx, int my, int ax, int ay, int w,
                          Component label, boolean active, int baseColor) {
-        int color      = active ? baseColor : COLOR_INACTIVE;
+        int color = active ? baseColor : COLOR_INACTIVE;
         int colorAlpha = 0xFF000000 | color;
-        int light      = 0xFF000000 | lighten(color);
-        int dark       = 0xFF000000 | darken(color);
+        int light = 0xFF000000 | lighten(color);
+        int dark = 0xFF000000 | darken(color);
 
-        g.fill(ax + 2, ay + BTN_H - 1, ax + w - 1, ay + BTN_H,   dark);
-        g.fill(ax + w - 1, ay + 2,     ax + w,      ay + BTN_H,   dark);
-        g.fill(ax,     ay,     ax + w - 1, ay + 1,         light);
-        g.fill(ax,     ay + 1, ax + 1,     ay + BTN_H - 1, light);
+        g.fill(ax + 2, ay + BTN_H - 1, ax + w - 1, ay + BTN_H, dark);
+        g.fill(ax + w - 1, ay + 2, ax + w, ay + BTN_H, dark);
+        g.fill(ax, ay, ax + w - 1, ay + 1, light);
+        g.fill(ax, ay + 1, ax + 1, ay + BTN_H - 1, light);
         g.fill(ax + 1, ay + 1, ax + w - 1, ay + BTN_H - 1, colorAlpha);
         g.fill(ax + 1, ay + 1, ax + w - 1, ay + 1 + BTN_H / 3, 0x22FFFFFF);
 
@@ -227,10 +236,10 @@ public class TexasHoldemScreen extends GameScreen<TexasHoldemGame, TexasHoldemMe
 
         TexasHoldemGame.Phase phase = menu.getPhase();
         String phaseName = switch (phase) {
-            case PREFLOP  -> "Pre-Flop";
-            case FLOP     -> "Flop";
-            case TURN     -> "Turn";
-            case RIVER    -> "River";
+            case PREFLOP -> "Pre-Flop";
+            case FLOP -> "Flop";
+            case TURN -> "Turn";
+            case RIVER -> "River";
             case SHOWDOWN -> "Showdown";
         };
         Component phaseComp = Component.literal(phaseName)
@@ -251,7 +260,10 @@ public class TexasHoldemScreen extends GameScreen<TexasHoldemGame, TexasHoldemMe
             var history = ChartaModClient.LOCAL_HISTORY;
             for (int i = history.size() - 1; i >= 0; i--) {
                 var entry = history.get(i);
-                if (entry.getLeft().getString().isEmpty()) { bannerMsg = entry.getRight(); break; }
+                if (entry.getLeft().getString().isEmpty()) {
+                    bannerMsg = entry.getRight();
+                    break;
+                }
             }
             if (bannerMsg != null) {
                 int bw = font.width(bannerMsg) + 12;
@@ -280,27 +292,31 @@ public class TexasHoldemScreen extends GameScreen<TexasHoldemGame, TexasHoldemMe
                 && menu.getPhase() != TexasHoldemGame.Phase.SHOWDOWN;
         int myIdx = menu.getGame().getPlayers().indexOf(menu.getCardPlayer());
         boolean isFolded = myIdx >= 0 && menu.isFolded(myIdx);
-        boolean isAllIn  = myIdx >= 0 && menu.isAllIn(myIdx);
+        boolean isAllIn = myIdx >= 0 && menu.isAllIn(myIdx);
 
         if (myTurn && !isFolded && !isAllIn) {
-            int myChips  = myIdx >= 0 ? menu.getChips(myIdx) : 0;
+            int myChips = myIdx >= 0 ? menu.getChips(myIdx) : 0;
             int minRaise = menu.getRaiseAmount();
             int bgBottom = height - 63;
 
-            int totalW  = BTN_W + BTN_GAP + BTN_W + BTN_GAP + RAISE_BTN_W + BTN_GAP + BTN_W;
-            int bx      = (width - totalW) / 2;
-            int by      = bgBottom - BTN_H - 6;
-            int callX   = bx + BTN_W + BTN_GAP;
-            int raiseX  = callX + BTN_W + BTN_GAP;
-            int allInX  = raiseX + RAISE_BTN_W + BTN_GAP;
+            int totalW = BTN_W + BTN_GAP + BTN_W + BTN_GAP + RAISE_BTN_W + BTN_GAP + BTN_W;
+            int bx = (width - totalW) / 2;
+            int by = bgBottom - BTN_H - 6;
+            int callX = bx + BTN_W + BTN_GAP;
+            int raiseX = callX + BTN_W + BTN_GAP;
+            int allInX = raiseX + RAISE_BTN_W + BTN_GAP;
 
             // Fold
             if (hit(mouseX, mouseY, bx, by, BTN_W)) {
-                raiseMenuOpen = false; sendAction(TexasHoldemGame.ACTION_FOLD); return true;
+                raiseMenuOpen = false;
+                sendAction(TexasHoldemGame.ACTION_FOLD);
+                return true;
             }
             // Call / Check
             if (hit(mouseX, mouseY, callX, by, BTN_W)) {
-                raiseMenuOpen = false; sendAction(TexasHoldemGame.ACTION_CALL); return true;
+                raiseMenuOpen = false;
+                sendAction(TexasHoldemGame.ACTION_CALL);
+                return true;
             }
             // Toggle raise panel
             if (myChips > 0 && hit(mouseX, mouseY, raiseX, by, RAISE_BTN_W)) {
@@ -311,7 +327,9 @@ public class TexasHoldemScreen extends GameScreen<TexasHoldemGame, TexasHoldemMe
             }
             // All-In
             if (myChips > 0 && hit(mouseX, mouseY, allInX, by, BTN_W)) {
-                raiseMenuOpen = false; sendAction(TexasHoldemGame.ACTION_ALL_IN); return true;
+                raiseMenuOpen = false;
+                sendAction(TexasHoldemGame.ACTION_ALL_IN);
+                return true;
             }
 
             // Raise sub-panel interactions
@@ -378,7 +396,9 @@ public class TexasHoldemScreen extends GameScreen<TexasHoldemGame, TexasHoldemMe
                 return true;
             }
             if (keyCode == 256) { // Escape
-                raiseMenuOpen = false; customRaiseText = ""; customFieldFocused = false;
+                raiseMenuOpen = false;
+                customRaiseText = "";
+                customFieldFocused = false;
                 return true;
             }
             return true; // consume all keys while field is focused
@@ -443,15 +463,15 @@ public class TexasHoldemScreen extends GameScreen<TexasHoldemGame, TexasHoldemMe
 
         for (int i = 0; i < n; i++) {
             float px = width / 2f - playersWidth / 2f + i * (playerSlotW + playerSlotW / 10f);
-            boolean fd     = menu.isFolded(i);
-            boolean ai     = menu.isAllIn(i);
+            boolean fd = menu.isFolded(i);
+            boolean ai = menu.isAllIn(i);
             boolean dealer = i == menu.getDealerIndex();
-            int chips      = menu.getChips(i);
-            int bet        = menu.getRoundBet(i);
+            int chips = menu.getChips(i);
+            int bet = menu.getRoundBet(i);
 
             String chipStr = fd ? "Fold" : ai ? "All-In" : chips + "♦";
-            if (dealer)          chipStr = "[D] " + chipStr;
-            if (bet > 0 && !fd)  chipStr += "(" + bet + ")";
+            if (dealer) chipStr = "[D] " + chipStr;
+            if (bet > 0 && !fd) chipStr += "(" + bet + ")";
             int textColor = fd ? 0xAAAAAA : ai ? 0xFFD700 : 0xFFFFFF;
 
             g.pose().pushPose();

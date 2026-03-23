@@ -25,7 +25,7 @@ import java.util.function.Predicate;
 
 /**
  * Blackjack — all players bet simultaneously, then play against dealer.
- *
+ * <p>
  * Flow:
  * 1. BETTING: all players set their bet (ACTION_BET+amount). When all bets placed, deal.
  * 2. PLAYING: players take turns — Hit, Stand, Double.
@@ -35,11 +35,11 @@ import java.util.function.Predicate;
 public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
 
     // Actions sent from client
-    public static final int ACTION_HIT    = 200;
-    public static final int ACTION_STAND  = 201;
+    public static final int ACTION_HIT = 200;
+    public static final int ACTION_STAND = 201;
     public static final int ACTION_DOUBLE = 202;
     // Bet: ACTION_BET + amount
-    public static final int ACTION_BET    = 300;
+    public static final int ACTION_BET = 300;
 
     // ── Options ───────────────────────────────────────────────────────────────
     private final GameOption.Number STARTING_CHIPS_OPT = new GameOption.Number(
@@ -53,14 +53,17 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
             Component.translatable("rule.charta.blackjack.min_bet.description"));
 
     // ── Synced state (public for ContainerData) ───────────────────────────────
-    public int[]     chips;
-    public int[]     bets;
+    public int[] chips;
+    public int[] bets;
     public boolean[] stood;
     public boolean[] busted;
-    public int       phaseOrdinal;
+    public int phaseOrdinal;
 
-    public enum Phase { BETTING, PLAYING, DEALER, RESULT }
-    public Phase getPhase() { return Phase.values()[phaseOrdinal]; }
+    public enum Phase {BETTING, PLAYING, DEALER, RESULT}
+
+    public Phase getPhase() {
+        return Phase.values()[phaseOrdinal];
+    }
 
     // ── Slots ─────────────────────────────────────────────────────────────────
     public static final int MAX_DEALER_CARDS = 7;
@@ -72,37 +75,51 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
     // Which player index is currently acting in PLAYING phase
     private int activePlayerIndex = 0;
 
-    private int startingChips() { return STARTING_CHIPS_OPT.get() * 100; }
-    private int minBet()        { return MIN_BET_OPT.get(); }
+    private int startingChips() {
+        return STARTING_CHIPS_OPT.get() * 100;
+    }
+
+    private int minBet() {
+        return MIN_BET_OPT.get();
+    }
 
     // ── Constructor ───────────────────────────────────────────────────────────
     public BlackjackGame(List<CardPlayer> players, Deck deck) {
         super(players, deck);
         int n = Math.max(players.size(), 1);
-        chips        = new int[n];
-        bets         = new int[n];
-        stood        = new boolean[n];
-        busted       = new boolean[n];
+        chips = new int[n];
+        bets = new int[n];
+        stood = new boolean[n];
+        busted = new boolean[n];
         phaseOrdinal = Phase.BETTING.ordinal();
 
         // Register 7 individual dealer card slots, spread horizontally in table centre
         float cardW = CardImage.WIDTH;
-        float gapD  = 8f;
+        float gapD = 8f;
         float totalD = MAX_DEALER_CARDS * cardW + (MAX_DEALER_CARDS - 1) * gapD;
         float startX = (CardTableBlockEntity.TABLE_WIDTH - totalD) / 2f;
         float cy = CardTableBlockEntity.TABLE_HEIGHT / 2f - CardImage.HEIGHT / 2f - 30f;
         for (int di = 0; di < MAX_DEALER_CARDS; di++) {
             float cx = startX + di * (cardW + gapD);
             dealerSlots[di] = addSlot(new GameSlot(new LinkedList<>(), cx, cy, 0f, 0f) {
-                @Override public boolean canInsertCard(CardPlayer p, List<Card> c, int i) { return false; }
-                @Override public boolean canRemoveCard(CardPlayer p, int i)               { return false; }
+                @Override
+                public boolean canInsertCard(CardPlayer p, List<Card> c, int i) {
+                    return false;
+                }
+
+                @Override
+                public boolean canRemoveCard(CardPlayer p, int i) {
+                    return false;
+                }
             });
         }
     }
 
     // ── Registration ──────────────────────────────────────────────────────────
     @Override
-    public List<GameOption<?>> getOptions() { return List.of(STARTING_CHIPS_OPT, MIN_BET_OPT); }
+    public List<GameOption<?>> getOptions() {
+        return List.of(STARTING_CHIPS_OPT, MIN_BET_OPT);
+    }
 
     @Override
     public ModMenuTypeRegistry.AdvancedMenuTypeEntry<BlackjackMenu, AbstractCardMenu.Definition> getMenuType() {
@@ -130,8 +147,8 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
     @Override
     public void startGame() {
         int n = players.size();
-        Arrays.fill(bets,   0); // 0 = no bet yet; -1 = bankrupt skip (set in startBettingRound)
-        Arrays.fill(stood,  false);
+        Arrays.fill(bets, 0); // 0 = no bet yet; -1 = bankrupt skip (set in startBettingRound)
+        Arrays.fill(stood, false);
         Arrays.fill(busted, false);
         for (GameSlot s : dealerSlots) s.clear();
         dealerCards.clear();
@@ -144,17 +161,22 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
         // Build 4 shuffled decks
         buildDrawPile();
 
-        for (CardPlayer p : players) { getPlayerHand(p).clear(); getCensoredHand(p).clear(); }
+        for (CardPlayer p : players) {
+            getPlayerHand(p).clear();
+            getCensoredHand(p).clear();
+        }
 
         phaseOrdinal = Phase.BETTING.ordinal();
-        isGameReady  = false;
-        isGameOver   = false;
+        isGameReady = false;
+        isGameOver = false;
 
         table(Component.translatable("message.charta.game_started"));
         table(Component.translatable("message.charta.blackjack.place_bets"));
 
         // Small delay then start betting
-        for (int i = 0; i < 5; i++) scheduledActions.add(() -> {});
+        for (int i = 0; i < 5; i++)
+            scheduledActions.add(() -> {
+            });
         // tick() will set isGameReady=true and call runGame() → startBettingRound()
     }
 
@@ -165,8 +187,9 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
         switch (getPhase()) {
             case BETTING -> startBettingRound();
             case PLAYING -> startPlayingRound();
-            case DEALER  -> runDealerTurn();
-            case RESULT  -> {}
+            case DEALER -> runDealerTurn();
+            case RESULT -> {
+            }
         }
     }
 
@@ -183,7 +206,10 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
         // Count active (non-bankrupt) players
         int active = 0;
         for (int i = 0; i < players.size(); i++) if (chips[i] > 0) active++;
-        if (active == 0) { endGame(); return; }
+        if (active == 0) {
+            endGame();
+            return;
+        }
 
         table(Component.translatable("message.charta.blackjack.place_bets"));
         currentPlayer = null;
@@ -200,12 +226,14 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
         scheduledActions.add(this::dealInitialCards);
     }
 
-    /** Called by handleBet when a player submits their bet. */
+    /**
+     * Called by handleBet when a player submits their bet.
+     */
     public void handleBet(int playerIdx, int amount) {
         if (playerIdx < 0 || playerIdx >= players.size()) return;
         if (bets[playerIdx] > 0) return; // already bet
         int actual = Math.max(minBet(), Math.min(amount, chips[playerIdx]));
-        bets[playerIdx]   = actual;
+        bets[playerIdx] = actual;
         chips[playerIdx] -= actual;
         play(players.get(playerIdx), Component.translatable("message.charta.blackjack.bet_placed", actual));
 
@@ -225,7 +253,9 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
                     players.get(pi).playSound(ModSounds.CARD_DRAW.get());
                     dealFaceUp(players.get(pi), 1);
                 });
-                for (int _d=0;_d<8;_d++) scheduledActions.add(() -> {});
+                for (int _d = 0; _d < 8; _d++)
+                    scheduledActions.add(() -> {
+                    });
             }
             final boolean faceDown = (round == 1);
             scheduledActions.add(() -> {
@@ -236,12 +266,19 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
                     } else {
                         if (c.flipped()) c.flip(); // face-up
                     }
-                    int dIdx = 0; for (int _i=0;_i<dealerSlots.length;_i++) { if (dealerSlots[_i].isEmpty()) { dIdx=_i; break; } }
+                    int dIdx = 0;
+                    for (int _i = 0; _i < dealerSlots.length; _i++) {
+                        if (dealerSlots[_i].isEmpty()) {
+                            dIdx = _i;
+                            break;
+                        }
+                    }
                     dealerSlots[dIdx].add(c);
                     dealerCards.add(c);
                 }
             });
-            scheduledActions.add(() -> {});
+            scheduledActions.add(() -> {
+            });
         }
 
         scheduledActions.add(() -> {
@@ -260,7 +297,8 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
             }
             // isGameReady remains false; tick() drains scheduledActions then calls runGame() → startPlayingRound()
         });
-        scheduledActions.add(() -> {}); // extra tick to ensure runGame() is invoked
+        scheduledActions.add(() -> {
+        }); // extra tick to ensure runGame() is invoked
     }
 
     // ─── PLAYING: players take turns ─────────────────────────────────────────
@@ -281,7 +319,9 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
         if (activePlayerIndex >= players.size()) {
             // All players done → dealer turn
             isGameReady = false;
-            for (int _d=0;_d<15;_d++) scheduledActions.add(() -> {});
+            for (int _d = 0; _d < 15; _d++)
+                scheduledActions.add(() -> {
+                });
             scheduledActions.add(() -> {
                 phaseOrdinal = Phase.DEALER.ordinal();
                 java.util.Arrays.stream(dealerSlots).filter(s -> !s.isEmpty()).flatMap(s -> s.stream()).filter(Card::flipped).findFirst().ifPresent(Card::flip);
@@ -304,8 +344,8 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
             waitingForPlayAction = false;
             if (play != null) {
                 switch (play.slot()) {
-                    case ACTION_HIT    -> doHit(pi);
-                    case ACTION_STAND  -> doStand(pi);
+                    case ACTION_HIT -> doHit(pi);
+                    case ACTION_STAND -> doStand(pi);
                     case ACTION_DOUBLE -> doDouble(pi);
                 }
             }
@@ -316,7 +356,8 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
             }
             // Schedule next action via tick cycle
             isGameReady = false;
-            scheduledActions.add(() -> {});
+            scheduledActions.add(() -> {
+            });
         });
         // isGameReady stays true so buttons appear and tick() processes afterPlay
     }
@@ -340,7 +381,7 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
 
     private void doDouble(int pi) {
         int extra = Math.min(bets[pi], chips[pi]);
-        bets[pi]  += extra;
+        bets[pi] += extra;
         chips[pi] -= extra;
         play(players.get(pi), Component.translatable("message.charta.blackjack.doubled", bets[pi]));
         doHit(pi);
@@ -351,20 +392,28 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
     private void runDealerTurn() {
         java.util.LinkedList<Card> all = new java.util.LinkedList<>();
         for (GameSlot s : dealerSlots) s.stream().forEach(all::add);
-        int dv = handValue(new GameSlot(all, 0,0,0,0));
+        int dv = handValue(new GameSlot(all, 0, 0, 0, 0));
         if (dv < 17) {
             isGameReady = false;
-            for (int _d=0;_d<15;_d++) scheduledActions.add(() -> {});
+            for (int _d = 0; _d < 15; _d++)
+                scheduledActions.add(() -> {
+                });
             scheduledActions.add(() -> {
                 if (!drawPile.isEmpty()) {
                     Card c = drawPile.removeLast();
                     if (c.flipped()) c.flip();
-                    int dIdx2 = 0; for (int _i=0;_i<dealerSlots.length;_i++) { if (dealerSlots[_i].isEmpty()) { dIdx2=_i; break; } }
+                    int dIdx2 = 0;
+                    for (int _i = 0; _i < dealerSlots.length; _i++) {
+                        if (dealerSlots[_i].isEmpty()) {
+                            dIdx2 = _i;
+                            break;
+                        }
+                    }
                     dealerSlots[dIdx2].add(c);
                     dealerCards.add(c);
                     java.util.LinkedList<Card> _all = new java.util.LinkedList<>();
                     for (GameSlot _s : dealerSlots) _s.stream().forEach(_all::add);
-                    table(Component.translatable("message.charta.blackjack.dealer_hits", handValue(new GameSlot(_all, 0,0,0,0))));
+                    table(Component.translatable("message.charta.blackjack.dealer_hits", handValue(new GameSlot(_all, 0, 0, 0, 0))));
                 }
                 // tick() will call runGame() → runDealerTurn() again
             });
@@ -377,21 +426,22 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
     // ─── Payout ───────────────────────────────────────────────────────────────
     private void resolveRound(int dealerValue) {
         boolean dealerBust = dealerValue > 21;
-        if (dealerBust) table(Component.translatable("message.charta.blackjack.dealer_busts").withStyle(ChatFormatting.GREEN));
+        if (dealerBust)
+            table(Component.translatable("message.charta.blackjack.dealer_busts").withStyle(ChatFormatting.GREEN));
         else table(Component.literal("Dealer stands at " + dealerValue).withStyle(ChatFormatting.GRAY));
 
         boolean anyWithChips = false;
         for (int i = 0; i < players.size(); i++) {
             if (bets[i] < 0) continue; // bankrupt — not in this round
-            CardPlayer p  = players.get(i);
-            int pv        = handValue(getPlayerHand(p));
+            CardPlayer p = players.get(i);
+            int pv = handValue(getPlayerHand(p));
             boolean bjack = pv == 21 && getPlayerHand(p).stream().count() == 2;
 
             if (busted[i]) {
                 play(p, Component.translatable("message.charta.blackjack.lost", bets[i]).withStyle(ChatFormatting.RED));
                 table(Component.literal("").append(p.getColoredName()).append(Component.literal(" busted — lost " + bets[i] + "♦").withStyle(ChatFormatting.RED)));
             } else if (dealerBust || pv > dealerValue) {
-                int win = bjack ? (int)(bets[i] * 1.5) : bets[i];
+                int win = bjack ? (int) (bets[i] * 1.5) : bets[i];
                 chips[i] += bets[i] + win;
                 String winMsg = bjack ? " BLACKJACK! +" + win + "♦" : " wins +" + win + "♦";
                 play(p, Component.translatable("message.charta.blackjack.won", win).withStyle(ChatFormatting.GREEN));
@@ -409,9 +459,11 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
         }
 
         phaseOrdinal = Phase.RESULT.ordinal();
-        isGameReady  = false;
+        isGameReady = false;
         final boolean hasChips = anyWithChips;
-        for (int i = 0; i < 60; i++) scheduledActions.add(() -> {});
+        for (int i = 0; i < 60; i++)
+            scheduledActions.add(() -> {
+            });
         scheduledActions.add(() -> {
             if (hasChips) startNewRound();
             else endGame();
@@ -420,14 +472,17 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
 
     private void startNewRound() {
         int n = players.size();
-        Arrays.fill(bets,   0);
-        Arrays.fill(stood,  false);
+        Arrays.fill(bets, 0);
+        Arrays.fill(stood, false);
         Arrays.fill(busted, false);
         for (GameSlot s : dealerSlots) s.clear();
         dealerCards.clear();
         activePlayerIndex = 0;
         waitingForPlayAction = false;
-        for (CardPlayer p : players) { getPlayerHand(p).clear(); getCensoredHand(p).clear(); }
+        for (CardPlayer p : players) {
+            getPlayerHand(p).clear();
+            getCensoredHand(p).clear();
+        }
 
         if (drawPile.size() < 20 * n) {
             buildDrawPile();
@@ -497,12 +552,15 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
             if (v == 11) aces++;
             total += v;
         }
-        while (total > 21 && aces > 0) { total -= 10; aces--; }
+        while (total > 21 && aces > 0) {
+            total -= 10;
+            aces--;
+        }
         return total;
     }
 
     private static int cardValue(Rank rank) {
-        if (rank == Ranks.ACE)   return 11;
+        if (rank == Ranks.ACE) return 11;
         if (rank == Ranks.JACK || rank == Ranks.QUEEN || rank == Ranks.KING) return 10;
         int v = rank.ordinal();
         return (v >= 2 && v <= 10) ? v : 10;
@@ -515,8 +573,8 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
     public void onPlayerLeft(int idx) {
         if (idx < 0 || idx >= players.size()) return;
         busted[idx] = true;
-        chips[idx]  = 0;
-        bets[idx]   = -1; // sentinel: skip this player everywhere
+        chips[idx] = 0;
+        bets[idx] = -1; // sentinel: skip this player everywhere
 
         Phase phase = Phase.values()[phaseOrdinal];
         if (phase == Phase.BETTING) {
@@ -528,7 +586,8 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
                 waitingForPlayAction = false;
                 activePlayerIndex++;
                 isGameReady = false;
-                scheduledActions.add(() -> {});
+                scheduledActions.add(() -> {
+                });
             }
         }
     }
@@ -539,7 +598,10 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
         isGameOver = true;
         int best = -1, bestChips = 0;
         for (int i = 0; i < players.size(); i++) {
-            if (chips[i] > bestChips) { bestChips = chips[i]; best = i; }
+            if (chips[i] > bestChips) {
+                bestChips = chips[i];
+                best = i;
+            }
         }
         if (best >= 0) {
             CardPlayer winner = players.get(best);
@@ -556,14 +618,17 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
         for (CardPlayer p : players) p.play(null);
     }
 
-    @Override public int getMinPlayers() { return 1; }
+    @Override
+    public int getMinPlayers() {
+        return 1;
+    }
 
     /**
      * Prevents a player with 0 chips from sitting down again mid-game.
      * Called only at game-start, so we use it to check the starting state.
      */
     @Override
-    public com.mojang.datafixers.util.Either<dev.lucaargolo.charta.common.game.api.game.Game<?,?>, net.minecraft.network.chat.Component>
+    public com.mojang.datafixers.util.Either<dev.lucaargolo.charta.common.game.api.game.Game<?, ?>, net.minecraft.network.chat.Component>
     playerPredicate(java.util.List<CardPlayer> players) {
         return com.mojang.datafixers.util.Either.left(this);
     }
@@ -577,11 +642,15 @@ public class BlackjackGame extends Game<BlackjackGame, BlackjackMenu> {
         if (idx < 0) return true;   // new player, allow
         return chips[idx] > 0;       // only allow if they still have chips
     }
+
     public int getDealerValue() {
         // Count all cards in synced dealerSlots (works on both client and server)
         java.util.LinkedList<Card> all = new java.util.LinkedList<>();
         for (GameSlot s : dealerSlots) s.stream().forEach(all::add);
         return handValue(new GameSlot(all, 0, 0, 0, 0));
     }
-    public int getStartingChipsPublic()  { return startingChips(); }
+
+    public int getStartingChipsPublic() {
+        return startingChips();
+    }
 }

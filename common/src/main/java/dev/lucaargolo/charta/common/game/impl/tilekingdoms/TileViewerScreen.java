@@ -9,22 +9,22 @@ import org.jetbrains.annotations.NotNull;
 
 public class TileViewerScreen extends Screen {
 
-    private static final int CELL   = 36;  // tile preview size
-    private static final int GAP    = 4;
-    private static final int COLS   = 8;
-    private static final int PAD    = 12;
+    private static final int CELL = 36;  // tile preview size
+    private static final int GAP = 4;
+    private static final int COLS = 8;
+    private static final int PAD = 12;
 
     private int scrollY = 0;
     private final Screen parent;
 
     // Same colours as TileKingdomsScreen
-    private static final int C_FIELD  = 0xFF4CAF50;
+    private static final int C_FIELD = 0xFF4CAF50;
     private static final int C_FIELD2 = 0xFF388E3C;
-    private static final int C_ROAD   = 0xFFF0E68C;
+    private static final int C_ROAD = 0xFFF0E68C;
     private static final int C_ROAD_EDGE = 0xFFD4C870;
-    private static final int C_CITY   = 0xFF8D5A14;
-    private static final int C_CITY2  = 0xFFA07820;
-    private static final int C_MON    = 0xFF6A1B9A;
+    private static final int C_CITY = 0xFF8D5A14;
+    private static final int C_CITY2 = 0xFFA07820;
+    private static final int C_MON = 0xFF6A1B9A;
     private static final int C_BORDER = 0xFF222222;
 
     public TileViewerScreen(Screen parent) {
@@ -46,11 +46,11 @@ public class TileViewerScreen extends Screen {
         int totalH = rows * (CELL + GAP) + PAD * 2 + 24;
 
         // Panel
-        int panelX = (width  - COLS*(CELL+GAP) + GAP - 2*PAD) / 2;
-        int panelY = Math.max(20, height/2 - totalH/2);
+        int panelX = (width - COLS * (CELL + GAP) + GAP - 2 * PAD) / 2;
+        int panelY = Math.max(20, height / 2 - totalH / 2);
 
-        g.fill(panelX - PAD, panelY - PAD, panelX + COLS*(CELL+GAP) - GAP + PAD, panelY + totalH, 0xEE111111);
-        g.fill(panelX - PAD, panelY - PAD, panelX + COLS*(CELL+GAP) - GAP + PAD, panelY - PAD + 1, 0xFF444444);
+        g.fill(panelX - PAD, panelY - PAD, panelX + COLS * (CELL + GAP) - GAP + PAD, panelY + totalH, 0xEE111111);
+        g.fill(panelX - PAD, panelY - PAD, panelX + COLS * (CELL + GAP) - GAP + PAD, panelY - PAD + 1, 0xFF444444);
 
         // Title
         String title = "Tile Kingdoms — " + types.length + " tile types";
@@ -97,16 +97,26 @@ public class TileViewerScreen extends Screen {
             if (PlacedTile.edgeOf(val, dir) == TileType.Edge.C) drawCityBand(g, px, py, dir, ps);
         }
         if (type.connectedCity) {
-            int ce = 0; for (int d = 0; d < 4; d++) if (PlacedTile.edgeOf(val, d) == TileType.Edge.C) ce++;
-            if (ce >= 2) g.fill(px + ps/4, py + ps/4, px + 3*ps/4, py + 3*ps/4, C_CITY);
+            int ce = 0;
+            for (int d = 0; d < 4; d++) if (PlacedTile.edgeOf(val, d) == TileType.Edge.C) ce++;
+            if (ce >= 2) g.fill(px + ps / 4, py + ps / 4, px + 3 * ps / 4, py + 3 * ps / 4, C_CITY);
         }
 
         // Roads
-        boolean[] re = new boolean[4]; int rc = 0;
-        for (int d = 0; d < 4; d++) if (PlacedTile.edgeOf(val, d) == TileType.Edge.R) { re[d] = true; rc++; }
+        boolean[] re = new boolean[4];
+        int rc = 0;
+        for (int d = 0; d < 4; d++)
+            if (PlacedTile.edgeOf(val, d) == TileType.Edge.R) {
+                re[d] = true;
+                rc++;
+            }
         if (rc == 2) {
             int dA = -1, dB = -1;
-            for (int d = 0; d < 4; d++) if (re[d]) { if (dA < 0) dA = d; else dB = d; }
+            for (int d = 0; d < 4; d++)
+                if (re[d]) {
+                    if (dA < 0) dA = d;
+                    else dB = d;
+                }
             drawRoadCorridor(g, px, py, ps, dA, dB);
         } else if (rc > 0) {
             for (int d = 0; d < 4; d++) if (re[d]) drawRoadHalf(g, px, py, ps, d);
@@ -114,7 +124,7 @@ public class TileViewerScreen extends Screen {
 
         // Monastery
         if (type.monastery) {
-            int cx = px + ps/2, cy = py + ps/2, r = ps / 6;
+            int cx = px + ps / 2, cy = py + ps / 2, r = ps / 6;
             g.fill(cx - r, cy - 1, cx + r + 1, cy + 2, C_MON);
             g.fill(cx - 1, cy - r, cx + 2, cy + r + 1, C_MON);
             g.fill(cx - 1, cy - 1, cx + 2, cy + 2, 0xFFFFD700);
@@ -143,18 +153,34 @@ public class TileViewerScreen extends Screen {
     }
 
     private void drawRoadHalf(GuiGraphics g, int px, int py, int ps, int dir) {
-        int cx = px + ps/2, cy = py + ps/2, hw = ps / 10 + 1, t = ps / 4;
+        int cx = px + ps / 2, cy = py + ps / 2, hw = ps / 10 + 1, t = ps / 4;
         switch (dir) {
-            case 0 -> { g.fill(cx - hw, py + 1, cx + hw, cy, C_ROAD); g.fill(cx - hw, py+1, cx-hw+1, cy, C_ROAD_EDGE); g.fill(cx+hw-1, py+1, cx+hw, cy, C_ROAD_EDGE); }
-            case 1 -> { g.fill(cx, cy - hw, px + ps - 1, cy + hw, C_ROAD); g.fill(cx, cy-hw, px+ps-1, cy-hw+1, C_ROAD_EDGE); g.fill(cx, cy+hw-1, px+ps-1, cy+hw, C_ROAD_EDGE); }
-            case 2 -> { g.fill(cx - hw, cy, cx + hw, py + ps - 1, C_ROAD); g.fill(cx-hw, cy, cx-hw+1, py+ps-1, C_ROAD_EDGE); g.fill(cx+hw-1, cy, cx+hw, py+ps-1, C_ROAD_EDGE); }
-            case 3 -> { g.fill(px + 1, cy - hw, cx, cy + hw, C_ROAD); g.fill(px+1, cy-hw, cx, cy-hw+1, C_ROAD_EDGE); g.fill(px+1, cy+hw-1, cx, cy+hw, C_ROAD_EDGE); }
+            case 0 -> {
+                g.fill(cx - hw, py + 1, cx + hw, cy, C_ROAD);
+                g.fill(cx - hw, py + 1, cx - hw + 1, cy, C_ROAD_EDGE);
+                g.fill(cx + hw - 1, py + 1, cx + hw, cy, C_ROAD_EDGE);
+            }
+            case 1 -> {
+                g.fill(cx, cy - hw, px + ps - 1, cy + hw, C_ROAD);
+                g.fill(cx, cy - hw, px + ps - 1, cy - hw + 1, C_ROAD_EDGE);
+                g.fill(cx, cy + hw - 1, px + ps - 1, cy + hw, C_ROAD_EDGE);
+            }
+            case 2 -> {
+                g.fill(cx - hw, cy, cx + hw, py + ps - 1, C_ROAD);
+                g.fill(cx - hw, cy, cx - hw + 1, py + ps - 1, C_ROAD_EDGE);
+                g.fill(cx + hw - 1, cy, cx + hw, py + ps - 1, C_ROAD_EDGE);
+            }
+            case 3 -> {
+                g.fill(px + 1, cy - hw, cx, cy + hw, C_ROAD);
+                g.fill(px + 1, cy - hw, cx, cy - hw + 1, C_ROAD_EDGE);
+                g.fill(px + 1, cy + hw - 1, cx, cy + hw, C_ROAD_EDGE);
+            }
         }
     }
 
     @Override
     public boolean mouseScrolled(double mx, double my, double sx, double sy) {
-        scrollY -= (int)(sy * 10);
+        scrollY -= (int) (sy * 10);
         scrollY = Math.max(0, scrollY);
         return true;
     }
@@ -169,5 +195,7 @@ public class TileViewerScreen extends Screen {
     }
 
     @Override
-    public boolean isPauseScreen() { return false; }
+    public boolean isPauseScreen() {
+        return false;
+    }
 }

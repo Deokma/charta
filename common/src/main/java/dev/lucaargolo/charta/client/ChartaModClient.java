@@ -17,6 +17,7 @@ import dev.lucaargolo.charta.common.game.impl.solitaire.SolitaireScreen;
 import dev.lucaargolo.charta.common.game.impl.texasholdem.TexasHoldemScreen;
 import dev.lucaargolo.charta.common.item.ModItems;
 import dev.lucaargolo.charta.common.menu.ModMenuTypes;
+import dev.lucaargolo.charta.common.network.TileKingdomsBoardPayload;
 import dev.lucaargolo.charta.common.registry.ModItemRegistry;
 import dev.lucaargolo.charta.common.registry.minecraft.MinecraftEntry;
 import dev.lucaargolo.charta.common.resources.MarkdownResource;
@@ -120,8 +121,8 @@ public abstract class ChartaModClient {
             net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
             mc.setScreen(new dev.lucaargolo.charta.common.game.impl.tilekingdoms.TileViewerScreen(mc.screen));
         };
-        pm.registerClientHandler(dev.lucaargolo.charta.common.game.impl.tilekingdoms.TileKingdomsBoardPayload.class,
-                dev.lucaargolo.charta.common.game.impl.tilekingdoms.TileKingdomsBoardPayload::handleClient);
+        pm.registerClientHandler(TileKingdomsBoardPayload.class,
+                TileKingdomsBoardPayload::handleClient);
 
         this.registerAdditionalModel(ChartaMod.id("deck"));
         this.registerDynamicItemRenderer(ModItems.DECK, DeckItemRenderer::new);

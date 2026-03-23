@@ -4,6 +4,7 @@ import dev.lucaargolo.charta.common.game.api.CardPlayer;
 import dev.lucaargolo.charta.common.game.api.GamePlay;
 import dev.lucaargolo.charta.common.game.api.card.Deck;
 import dev.lucaargolo.charta.common.game.api.game.GameOption;
+import dev.lucaargolo.charta.common.network.TileKingdomsActionPayload;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 
@@ -12,8 +13,8 @@ import java.util.*;
 public class TileKingdomsGame extends TileKingdomsGameBase {
 
     public static final int FOLLOWERS_PER_PLAYER = 7;
-    public static final int SLOT_N=0,SLOT_E=1,SLOT_S=2,SLOT_W=3,SLOT_CENTER=4;
-    public static final int PHASE_PLACE=0, PHASE_CLAIM=1;
+    public static final int SLOT_N = 0, SLOT_E = 1, SLOT_S = 2, SLOT_W = 3, SLOT_CENTER = 4;
+    public static final int PHASE_PLACE = 0, PHASE_CLAIM = 1;
 
     public final TileKingdomsBoard board = new TileKingdomsBoard();
     private final List<TileType> tileDeck = new ArrayList<>();
@@ -28,12 +29,26 @@ public class TileKingdomsGame extends TileKingdomsGameBase {
     public final Map<Long, Integer> claims = new LinkedHashMap<>();
     public int winnerIdx = -1;
     public short[] boardSnapshot;
-    public int[]   claimsSnapshot = new int[0];
+    public int[] claimsSnapshot = new int[0];
     public boolean boardDirty = true;
+    /**
+     * Synced to clients via ContainerData. On server = tileDeck.size(). On client = synced value.
+     */
+    public int clientRemainingTiles = 0;
 
-    public int getRemainingTiles()       { return tileDeck.size(); }
-    public int getWinnerIdx()             { return winnerIdx; }
-    public void setGameReady(boolean v)  { isGameReady = v; }
+    public int getRemainingTiles() {
+        int n = tileDeck.size();
+        clientRemainingTiles = n;
+        return n;
+    }
+
+    public int getWinnerIdx() {
+        return winnerIdx;
+    }
+
+    public void setGameReady(boolean v) {
+        isGameReady = v;
+    }
 
     public TileKingdomsGame(List<CardPlayer> players, Deck deck) {
         super(players, deck);
@@ -42,9 +57,20 @@ public class TileKingdomsGame extends TileKingdomsGameBase {
         Arrays.fill(followersLeft, FOLLOWERS_PER_PLAYER);
     }
 
-    @Override public int getMinPlayers() { return 2; }
-    @Override public int getMaxPlayers() { return 5; }
-    @Override public List<GameOption<?>> getOptions() { return List.of(); }
+    @Override
+    public int getMinPlayers() {
+        return 2;
+    }
+
+    @Override
+    public int getMaxPlayers() {
+        return 5;
+    }
+
+    @Override
+    public List<GameOption<?>> getOptions() {
+        return List.of();
+    }
 
     @Override
     public void startGame() {
@@ -65,7 +91,10 @@ public class TileKingdomsGame extends TileKingdomsGameBase {
     @Override
     public void runGame() {
         if (!isGameReady) return;
-        if (tileDeck.isEmpty()) { endGame(); return; }
+        if (tileDeck.isEmpty()) {
+            endGame();
+            return;
+        }
         if (currentTileType != null || phase == PHASE_CLAIM) return;
         drawAndWaitForPlace();
     }
@@ -87,26 +116,31 @@ public class TileKingdomsGame extends TileKingdomsGameBase {
                 handlePlace(play.slot());
             else {
                 table(Component.literal(currentPlayer.getName().getString() + " discarded tile.").withStyle(ChatFormatting.GRAY));
-                currentTileType = null; advancePlayer();
+                currentTileType = null;
+                advancePlayer();
             }
         });
     }
 
     private void handlePlace(int packed) {
         int[] c = unpackAction(packed);
-        int lx=c[0], ly=c[1], rot=c[2];
+        int lx = c[0], ly = c[1], rot = c[2];
         if (currentTileType == null) return;
         if (!board.canPlace(lx, ly, currentTileType, rot)) {
             table(Component.literal("Invalid spot!").withStyle(ChatFormatting.RED));
             currentPlayer.resetPlay();
             currentPlayer.afterPlay(play2 -> {
-                if (play2!=null && play2.slot()!=TileKingdomsActionPayload.SKIP_CLAIM) handlePlace(play2.slot());
-                else { currentTileType=null; advancePlayer(); }
+                if (play2 != null && play2.slot() != TileKingdomsActionPayload.SKIP_CLAIM) handlePlace(play2.slot());
+                else {
+                    currentTileType = null;
+                    advancePlayer();
+                }
             });
             return;
         }
         board.place(lx, ly, currentTileType, rot);
-        lastPlacedX = lx; lastPlacedY = ly;
+        lastPlacedX = lx;
+        lastPlacedY = ly;
         markBoardDirty();
         // Score and return followers from completed features
         board.scoreAndReturnFollowers(lx, ly, claims, players.size(), scores, followersLeft);
@@ -155,7 +189,7 @@ public class TileKingdomsGame extends TileKingdomsGameBase {
         if (slot == SLOT_CENTER) return claims.containsKey(packPos(lx, ly, SLOT_CENTER));
         Set<Long> region = board.getRegion(lx, ly, slot);
         for (Long pos : region) {
-            int rlx=(int)((pos>>8)&0xFF)-64, rly=(int)((pos>>16)&0xFF)-64, rslot=(int)(pos&0xFF);
+            int rlx = (int) ((pos >> 8) & 0xFF) - 64, rly = (int) ((pos >> 16) & 0xFF) - 64, rslot = (int) (pos & 0xFF);
             if (claims.containsKey(packPos(rlx, rly, rslot))) return true;
         }
         return false;
@@ -165,29 +199,30 @@ public class TileKingdomsGame extends TileKingdomsGameBase {
         short tile = board.get(lx, ly);
         if (PlacedTile.isEmpty(tile)) return false;
         TileType type = PlacedTile.typeOf(tile);
-        for (int dir=0;dir<4;dir++) {
-            if (PlacedTile.edgeOf(tile,dir)!=TileType.Edge.F && !isFeatureOwned(lx,ly,dir,tile)) return true;
+        for (int dir = 0; dir < 4; dir++) {
+            if (PlacedTile.edgeOf(tile, dir) != TileType.Edge.F && !isFeatureOwned(lx, ly, dir, tile)) return true;
         }
-        return type!=null && type.monastery && !claims.containsKey(packPos(lx,ly,SLOT_CENTER));
+        return type != null && type.monastery && !claims.containsKey(packPos(lx, ly, SLOT_CENTER));
     }
 
     public void rotateTile() {
         if (phase == PHASE_PLACE && currentTileType != null) {
-            currentRotation = (currentRotation+1)&3;
+            currentRotation = (currentRotation + 1) & 3;
             boardDirty = true;
         }
     }
 
     private void advancePlayer() {
-        int idx = (players.indexOf(currentPlayer)+1) % players.size();
+        int idx = (players.indexOf(currentPlayer) + 1) % players.size();
         currentPlayer = players.get(idx);
         isGameReady = false;
-        scheduledActions.add(() -> {});
+        scheduledActions.add(() -> {
+        });
     }
 
     @Override
     public boolean canPlay(CardPlayer player, GamePlay play) {
-        return player==currentPlayer && ((phase==PHASE_PLACE&&currentTileType!=null)||phase==PHASE_CLAIM);
+        return player == currentPlayer && ((phase == PHASE_PLACE && currentTileType != null) || phase == PHASE_CLAIM);
     }
 
     @Override
@@ -195,43 +230,77 @@ public class TileKingdomsGame extends TileKingdomsGameBase {
         if (isGameOver) return;
         isGameOver = true;
         board.scoreFinalAll(claims, players.size(), scores, followersLeft);
-        int best=-1, bestScore=-1;
-        for (int i=0;i<players.size();i++) if (scores[i]>bestScore) { bestScore=scores[i]; best=i; }
+        int best = -1, bestScore = -1;
+        for (int i = 0; i < players.size(); i++)
+            if (scores[i] > bestScore) {
+                bestScore = scores[i];
+                best = i;
+            }
         winnerIdx = best;
         StringBuilder sb = new StringBuilder("Final: ");
-        for (int i=0;i<players.size();i++) {
+        for (int i = 0; i < players.size(); i++) {
             sb.append(players.get(i).getName().getString()).append("=").append(scores[i]);
-            if (i<players.size()-1) sb.append(", ");
+            if (i < players.size() - 1) sb.append(", ");
         }
         table(Component.literal(sb.toString()).withStyle(ChatFormatting.GOLD));
-        if (best>=0) {
-            CardPlayer w=players.get(best);
+        if (best >= 0) {
+            CardPlayer w = players.get(best);
             w.sendTitle(Component.translatable("message.charta.you_won").withStyle(ChatFormatting.GREEN),
                     Component.translatable("message.charta.congratulations"));
-            for (int i=0;i<players.size();i++) if(i!=best)
-                players.get(i).sendTitle(Component.translatable("message.charta.you_lost").withStyle(ChatFormatting.RED),
-                        Component.translatable("message.charta.won_the_match", w.getName()));
+            for (int i = 0; i < players.size(); i++)
+                if (i != best)
+                    players.get(i).sendTitle(Component.translatable("message.charta.you_lost").withStyle(ChatFormatting.RED),
+                            Component.translatable("message.charta.won_the_match", w.getName()));
         }
         scheduledActions.clear();
         for (CardPlayer p : players) p.play(null);
     }
 
     // ── Static helpers ────────────────────────────────────────────────────────
-    public static int  packAction(int lx,int ly,int rot) { return ((lx+64)&0xFF)|(((ly+64)&0xFF)<<8)|((rot&3)<<16); }
-    public static int[] unpackAction(int v)              { return new int[]{(v&0xFF)-64,((v>>8)&0xFF)-64,(v>>16)&3}; }
-    public static int  packClaimAction(int slot)         { return 0x80000|(slot&0xF); }
-    public static int  unpackClaimSlot(int a)            { return a&0xF; }
-    public static boolean isClaimAction(int a)           { return (a&0x80000)!=0; }
-    public static long packPos(int lx,int ly,int slot)   { return (slot&0xFF)|(((lx+64)&0xFF)<<8L)|(((ly+64)&0xFF)<<16L); }
-    public static int  packClaimInt(int lx,int ly,int slot,int pidx) { return ((lx+64)&0xFF)|(((ly+64)&0xFF)<<8)|((slot&0xF)<<16)|((pidx&0xFF)<<20); }
-    public static int[] unpackClaimInt(int v)            { return new int[]{(v&0xFF)-64,((v>>8)&0xFF)-64,(v>>16)&0xF,(v>>20)&0xFF}; }
+    public static int packAction(int lx, int ly, int rot) {
+        return ((lx + 64) & 0xFF) | (((ly + 64) & 0xFF) << 8) | ((rot & 3) << 16);
+    }
 
-    private void markBoardDirty()    { boardSnapshot=board.getGridCopy(); boardDirty=true; }
+    public static int[] unpackAction(int v) {
+        return new int[]{(v & 0xFF) - 64, ((v >> 8) & 0xFF) - 64, (v >> 16) & 3};
+    }
+
+    public static int packClaimAction(int slot) {
+        return 0x80000 | (slot & 0xF);
+    }
+
+    public static int unpackClaimSlot(int a) {
+        return a & 0xF;
+    }
+
+    public static boolean isClaimAction(int a) {
+        return (a & 0x80000) != 0;
+    }
+
+    public static long packPos(int lx, int ly, int slot) {
+        return (slot & 0xFF) | (((lx + 64) & 0xFF) << 8L) | (((ly + 64) & 0xFF) << 16L);
+    }
+
+    public static int packClaimInt(int lx, int ly, int slot, int pidx) {
+        return ((lx + 64) & 0xFF) | (((ly + 64) & 0xFF) << 8) | ((slot & 0xF) << 16) | ((pidx & 0xFF) << 20);
+    }
+
+    public static int[] unpackClaimInt(int v) {
+        return new int[]{(v & 0xFF) - 64, ((v >> 8) & 0xFF) - 64, (v >> 16) & 0xF, (v >> 20) & 0xFF};
+    }
+
+    private void markBoardDirty() {
+        boardSnapshot = board.getGridCopy();
+        boardDirty = true;
+    }
+
     private void refreshClaimsSnapshot() {
-        claimsSnapshot=new int[claims.size()]; int i=0;
-        for (Map.Entry<Long,Integer> e : claims.entrySet()) {
-            long k=e.getKey(); int slot=(int)(k&0xFF),lx=(int)((k>>8)&0xFF)-64,ly=(int)((k>>16)&0xFF)-64;
-            claimsSnapshot[i++]=packClaimInt(lx,ly,slot,e.getValue());
+        claimsSnapshot = new int[claims.size()];
+        int i = 0;
+        for (Map.Entry<Long, Integer> e : claims.entrySet()) {
+            long k = e.getKey();
+            int slot = (int) (k & 0xFF), lx = (int) ((k >> 8) & 0xFF) - 64, ly = (int) ((k >> 16) & 0xFF) - 64;
+            claimsSnapshot[i++] = packClaimInt(lx, ly, slot, e.getValue());
         }
     }
 }

@@ -30,18 +30,18 @@ public class TexasHoldemMenu extends AbstractCardMenu<TexasHoldemGame, TexasHold
     // [23]     raiseAmount  (computed: raiseMultiplier × bigBlind)
     // Total: 24 tracked integers
 
-    private static final int MAX_PLAYERS          = 8;
-    private static final int OFFSET_CHIPS         = 0;
-    private static final int OFFSET_BETS          = MAX_PLAYERS;
-    private static final int OFFSET_FOLDED        = MAX_PLAYERS * 2;
-    private static final int OFFSET_ALLIN         = MAX_PLAYERS * 2 + 1;
-    private static final int OFFSET_POT           = MAX_PLAYERS * 2 + 2;
-    private static final int OFFSET_BET           = MAX_PLAYERS * 2 + 3;
-    private static final int OFFSET_PHASE         = MAX_PLAYERS * 2 + 4;
-    private static final int OFFSET_DEALER        = MAX_PLAYERS * 2 + 5;
+    private static final int MAX_PLAYERS = 8;
+    private static final int OFFSET_CHIPS = 0;
+    private static final int OFFSET_BETS = MAX_PLAYERS;
+    private static final int OFFSET_FOLDED = MAX_PLAYERS * 2;
+    private static final int OFFSET_ALLIN = MAX_PLAYERS * 2 + 1;
+    private static final int OFFSET_POT = MAX_PLAYERS * 2 + 2;
+    private static final int OFFSET_BET = MAX_PLAYERS * 2 + 3;
+    private static final int OFFSET_PHASE = MAX_PLAYERS * 2 + 4;
+    private static final int OFFSET_DEALER = MAX_PLAYERS * 2 + 5;
     private static final int OFFSET_COMMUNITY_CNT = MAX_PLAYERS * 2 + 6;
-    private static final int OFFSET_RAISE_AMOUNT  = MAX_PLAYERS * 2 + 7;
-    private static final int DATA_COUNT           = MAX_PLAYERS * 2 + 8;
+    private static final int OFFSET_RAISE_AMOUNT = MAX_PLAYERS * 2 + 7;
+    private static final int DATA_COUNT = MAX_PLAYERS * 2 + 8;
 
     private final ContainerData data = new ContainerData() {
 
@@ -124,8 +124,8 @@ public class TexasHoldemMenu extends AbstractCardMenu<TexasHoldemGame, TexasHold
         // GameScreen.renderTopBar places head at screen_x = w/2 - playersWidth/2 + i*(slotW+gap)
         // In menu coords: head_x_menu = imgW/2 - playersWidth/2 + i*(slotW+gap)
         {
-            float slotW       = CardSlot.getWidth(CardSlot.Type.PREVIEW) + 28f; // 69
-            int   n           = definition.players().length;
+            float slotW = CardSlot.getWidth(CardSlot.Type.PREVIEW) + 28f; // 69
+            int n = definition.players().length;
             float playersWidth = n * slotW + (n - 1f) * (slotW / 10f);
             for (int i = 0; i < n; i++) {
                 float headX = 256f / 2f - playersWidth / 2f + i * (slotW + slotW / 10f);
@@ -139,8 +139,8 @@ public class TexasHoldemMenu extends AbstractCardMenu<TexasHoldemGame, TexasHold
 
         // --- 5 community card slots ---
         // imageWidth=256; gap=20px as set by the user.
-        float cW     = 25f;
-        float gapC   = 20f;
+        float cW = 25f;
+        float gapC = 20f;
         float totalC = 5 * cW + 4 * gapC;     // 205
         float startC = (256f - totalC) / 2f;   // 25.5
         for (int i = 0; i < 5; i++) {
@@ -198,12 +198,16 @@ public class TexasHoldemMenu extends AbstractCardMenu<TexasHoldemGame, TexasHold
         return data.get(OFFSET_COMMUNITY_CNT);
     }
 
-    /** Returns the current raise step size (raiseMultiplier × bigBlind), synced from server. */
+    /**
+     * Returns the current raise step size (raiseMultiplier × bigBlind), synced from server.
+     */
     public int getRaiseAmount() {
         return data.get(OFFSET_RAISE_AMOUNT);
     }
 
-    /** How many chips the local player still needs to put in to match the current bet. */
+    /**
+     * How many chips the local player still needs to put in to match the current bet.
+     */
     public int getCallAmount() {
         int myIdx = game.getPlayers().indexOf(cardPlayer);
         if (myIdx < 0) return 0;
@@ -212,7 +216,9 @@ public class TexasHoldemMenu extends AbstractCardMenu<TexasHoldemGame, TexasHold
 
     // -------------------------------------------------------------------------
 
-    /** Returns the starting chip count for this game (from game options). */
+    /**
+     * Returns the starting chip count for this game (from game options).
+     */
     public int getStartingChips() {
         return game.getStartingChipsPublic();
     }
