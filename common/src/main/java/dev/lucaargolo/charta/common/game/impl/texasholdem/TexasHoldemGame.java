@@ -683,7 +683,7 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
             prevCap = cap;
         }
 
-        // Return rounding remainder to the first contender
+        // Safety net: if due to rounding any chips remain in pot, give to first contender
         int remainder = pot - distributed;
         if (remainder > 0 && !contenders.isEmpty()) {
             chips[contenders.get(0)] += remainder;
@@ -700,21 +700,32 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
     }
 
     private int awardSidePot(int sidePot, List<Integer> eligible, List<Card> community) {
-        long bestScore = eligible.stream()
-                .mapToLong(idx -> HandEvaluator.evaluate(allSevenCards(idx, community)))
+        // Cache evaluations — evaluate each hand only ONCE to guarantee consistent comparison
+        Map<Integer, Long> scores = new LinkedHashMap<>();
+        for (Integer idx : eligible) {
+            scores.put(idx, HandEvaluator.evaluate(allSevenCards(idx, community)));
+        }
+
+        long bestScore = scores.values().stream()
+                .mapToLong(Long::longValue)
                 .max().orElse(Long.MIN_VALUE);
 
         List<Integer> winners = eligible.stream()
-                .filter(idx -> HandEvaluator.evaluate(allSevenCards(idx, community)) == bestScore)
+                .filter(idx -> scores.get(idx) == bestScore)
                 .toList();
 
-        int share       = sidePot / winners.size();
+        int share     = sidePot / winners.size();
+        // Odd chip (e.g. pot=761, 2 winners → remainder=1): goes to the first winner
+        // by standard poker rules — announced so the player knows about it
+        int remainder = sidePot - share * winners.size();
         int distributed = 0;
 
-        for (int winnerIdx : winners) {
-            chips[winnerIdx] += share;
-            distributed      += share;
-            announceWinner(winnerIdx, share, community);
+        for (int i = 0; i < winners.size(); i++) {
+            int winnerIdx  = winners.get(i);
+            int actualGain = share + (i == 0 ? remainder : 0);
+            chips[winnerIdx] += actualGain;
+            distributed      += actualGain;
+            announceWinner(winnerIdx, actualGain, community);
         }
         for (int idx : eligible) {
             if (!winners.contains(idx)) announceLoser(idx, community);
