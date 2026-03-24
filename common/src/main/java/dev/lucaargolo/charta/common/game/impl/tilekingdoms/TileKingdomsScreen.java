@@ -14,7 +14,7 @@ import java.util.List;
 public class TileKingdomsScreen extends GameScreen<TileKingdomsGame, TileKingdomsMenu> {
 
     // ── Layout ────────────────────────────────────────────────────────────────
-    private static final int CELL = 24;  // tile size px
+    private static final int CELL = 32;  // tile size px
     // Board occupies: topBar(28) .. height-bottomBar(63) vertically, full width horizontally
     private static final int TOP_BAR = 28;
     private static final int BOTTOM_BAR = 63;
@@ -619,9 +619,10 @@ public class TileKingdomsScreen extends GameScreen<TileKingdomsGame, TileKingdom
 
         if (button == 0) {
             TileType ct = menu.getCurrentTile();
-            // ── Rotate button ────────────────────────────────────────────────
             if (ct != null && myTurn && phase == TileKingdomsGame.PHASE_PLACE) {
-                int ps = 56, rbx = width - ps - 8, rby = height - BOTTOM_BAR - 22 + ps + 2;
+                int ps = cs() + 8;
+                int px = width - ps - 6, py = height - BOTTOM_BAR - ps - 20;
+                int rbx = px, rby = py + ps + 2;
                 if (mx >= rbx && mx < rbx + ps && my >= rby && my < rby + 12) {
                     sendAction(TileKingdomsActionPayload.ROTATE);
                     return true;

@@ -15,7 +15,10 @@ import dev.lucaargolo.charta.common.game.impl.blackjack.BlackjackScreen;
 import dev.lucaargolo.charta.common.game.impl.fun.FunScreen;
 import dev.lucaargolo.charta.common.game.impl.solitaire.SolitaireScreen;
 import dev.lucaargolo.charta.common.game.impl.texasholdem.TexasHoldemScreen;
+import dev.lucaargolo.charta.common.game.impl.tilekingdoms.TileKingdomsScreen;
+import dev.lucaargolo.charta.common.game.impl.tilekingdoms.TileViewerScreen;
 import dev.lucaargolo.charta.common.item.ModItems;
+import dev.lucaargolo.charta.common.item.TileKingdomsBoxItem;
 import dev.lucaargolo.charta.common.menu.ModMenuTypes;
 import dev.lucaargolo.charta.common.network.TileKingdomsBoardPayload;
 import dev.lucaargolo.charta.common.registry.ModItemRegistry;
@@ -116,10 +119,10 @@ public abstract class ChartaModClient {
         this.registerMenuScreen(ModMenuTypes.FUN, FunScreen::new);
         this.registerMenuScreen(ModMenuTypes.SOLITAIRE, SolitaireScreen::new);
         this.registerMenuScreen(ModMenuTypes.TEXAS_HOLDEM, TexasHoldemScreen::new);
-        this.registerMenuScreen(ModMenuTypes.TILE_KINGDOMS, dev.lucaargolo.charta.common.game.impl.tilekingdoms.TileKingdomsScreen::new);
-        dev.lucaargolo.charta.common.item.TileKingdomsBoxItem.TILE_VIEWER_OPENER = () -> {
+        this.registerMenuScreen(ModMenuTypes.TILE_KINGDOMS, TileKingdomsScreen::new);
+        TileKingdomsBoxItem.TILE_VIEWER_OPENER = () -> {
             net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
-            mc.setScreen(new dev.lucaargolo.charta.common.game.impl.tilekingdoms.TileViewerScreen(mc.screen));
+            mc.setScreen(new TileViewerScreen(mc.screen));
         };
         pm.registerClientHandler(TileKingdomsBoardPayload.class,
                 TileKingdomsBoardPayload::handleClient);

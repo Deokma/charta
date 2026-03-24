@@ -78,8 +78,14 @@ public class TileKingdomsGame extends TileKingdomsGameBase {
         for (TileType t : TileType.values())
             for (int i = 0; i < t.count; i++) tileDeck.add(t);
         Collections.shuffle(tileDeck);
-        tileDeck.remove(TileType.START);
-        board.placeForced(0, 0, TileType.START, 0);
+        //tileDeck.remove(TileType.START);
+        TileType[] values = TileType.values();
+        TileType randomTile;
+        do {
+            randomTile = values[new Random().nextInt(values.length)];
+        } while (randomTile != TileType.CITY_FULL);
+
+        board.placeForced(0, 0, randomTile, 0);
         markBoardDirty();
         scores = new int[players.size()];
         followersLeft = new int[players.size()];

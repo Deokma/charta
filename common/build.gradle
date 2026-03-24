@@ -38,6 +38,9 @@ dependencies {
     compileOnly("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}")
     runtimeOnly("mezz.jei:jei-${minecraft_version}-common:${jei_version}")
 
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
     compileOnly("me.shedaniel:RoughlyEnoughItems-api:$rei_version")
 }
 
@@ -57,3 +60,6 @@ artifacts {
     commonResources sourceSets.main.resources.sourceDirectories.singleFile
 }
 
+test {
+    useJUnitPlatform()
+}

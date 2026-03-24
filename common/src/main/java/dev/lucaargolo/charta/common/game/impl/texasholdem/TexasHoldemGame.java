@@ -1054,7 +1054,7 @@ public class TexasHoldemGame extends Game<TexasHoldemGame, TexasHoldemMenu> {
      * category: 8=Str.Flush, 7=Quads, 6=FullHouse, 5=Flush,
      * 4=Straight, 3=Trips, 2=TwoPair, 1=OnePair, 0=HighCard
      * pack5: five rank values packed big-endian in base-100
-     * max = 14*100^4 + ... ≈ 1.41×10^9  <  BASE = 10^10  ✓
+     * max = 14*100^4 + ... ~= 1.41*10^9 less then BASE = 10^10
      */
     public static final class HandEvaluator {
 

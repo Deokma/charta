@@ -22,22 +22,22 @@ public enum TileType {
     // ── City cap (one edge) ────────────────────────────────────────────────────
     CITY_CAP(Edge.C, Edge.F, Edge.F, Edge.F, false, false, 5),   // City on N only
     CITY_CAP_ROAD_LR(Edge.C, Edge.R, Edge.F, Edge.R, false, false, 3),   // City N, road E-W
-    CITY_CAP_ROAD_S(Edge.C, Edge.F, Edge.R, Edge.F, false, false, 3),   // City N, road S
+    CITY_CAP_ROAD_T(Edge.C, Edge.R, Edge.R, Edge.R, false, false, 3),   // City N, road T
 
     // ── Two-edge city (connected) ──────────────────────────────────────────────
     CITY_BRIDGE(Edge.C, Edge.F, Edge.C, Edge.F, true, false, 1),   // City N-S tunnel
     CITY_CORNER_NE(Edge.C, Edge.C, Edge.F, Edge.F, true, false, 3),   // City corner N-E
-    CITY_CORNER_ROAD(Edge.C, Edge.C, Edge.R, Edge.F, true, false, 3),   // City corner + road
+    CITY_CORNER_ROAD(Edge.C, Edge.C, Edge.R, Edge.R, true, false, 3),   // City corner + road
 
     // ── Three-edge city ────────────────────────────────────────────────────────
     CITY_THREE(Edge.C, Edge.C, Edge.F, Edge.C, true, false, 3),   // City N, E, W
     CITY_THREE_ROAD(Edge.C, Edge.C, Edge.R, Edge.C, true, false, 2),   // City 3 + road S
 
     // ── Full city ──────────────────────────────────────────────────────────────
-    CITY_FULL(Edge.C, Edge.C, Edge.C, Edge.C, true, false, 1),
+    CITY_FULL(Edge.C, Edge.C, Edge.C, Edge.C, true, false, 1);
 
     // ── Starting tile (always placed first) ───────────────────────────────────
-    START(Edge.C, Edge.R, Edge.F, Edge.R, false, false, 1);
+    //START(Edge.C, Edge.R, Edge.F, Edge.R, false, false, 1);
 
     // ────────────────────────────────────────────────────────────────────────────
 
@@ -68,7 +68,7 @@ public enum TileType {
     }
 
     /**
-     * Edge type.
+     * Edge type. F-Field, R-Road, C-City
      */
     public enum Edge {F, R, C}
 

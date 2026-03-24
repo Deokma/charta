@@ -7,6 +7,14 @@ public class TileKingdomsBoard {
     public static final int SIZE = 25, HALF = SIZE / 2;
     private static final int[] DX = {0, 1, 0, -1}, DY = {-1, 0, 1, 0};
 
+    // Duplicated from TileKingdomsGame to keep TileKingdomsBoard free of Minecraft dependencies
+    // (TileKingdomsGame pulls net.minecraft.* which is not available in plain unit tests)
+    static final int SLOT_CENTER = 4;
+
+    static long packPos(int lx, int ly, int slot) {
+        return (slot & 0xFF) | (((lx + 64) & 0xFF) << 8L) | (((ly + 64) & 0xFF) << 16L);
+    }
+
     private final short[] grid = new short[SIZE * SIZE];
     private int minX = HALF, maxX = HALF, minY = HALF, maxY = HALF;
 
@@ -83,7 +91,7 @@ public class TileKingdomsBoard {
         Set<Long> visited = new HashSet<>();
         short tile = get(lx, ly);
         if (PlacedTile.isEmpty(tile)) return visited;
-        TileType.Edge edge = (slot == TileKingdomsGame.SLOT_CENTER) ? TileType.Edge.F : PlacedTile.edgeOf(tile, slot);
+        TileType.Edge edge = (slot == SLOT_CENTER) ? TileType.Edge.F : PlacedTile.edgeOf(tile, slot);
         if (edge == TileType.Edge.F) return visited;
         bfsRegion(lx, ly, slot, edge, visited, new HashSet<>());
         return visited;
@@ -97,7 +105,7 @@ public class TileKingdomsBoard {
      */
     private void bfsRegion(int lx, int ly, int slot, TileType.Edge targetEdge,
                            Set<Long> visited, Set<String> tileVisited) {
-        long posKey = TileKingdomsGame.packPos(lx, ly, slot);
+        long posKey = packPos(lx, ly, slot);
         if (visited.contains(posKey)) return;
         visited.add(posKey);
         short tile = get(lx, ly);
@@ -110,7 +118,7 @@ public class TileKingdomsBoard {
             if (type.connectedCity) {
                 for (int d = 0; d < 4; d++) {
                     if (PlacedTile.edgeOf(tile, d) == TileType.Edge.C) {
-                        long dk = TileKingdomsGame.packPos(lx, ly, d);
+                        long dk = packPos(lx, ly, d);
                         if (!visited.contains(dk)) bfsRegion(lx, ly, d, targetEdge, visited, tileVisited);
                     }
                 }
@@ -132,7 +140,7 @@ public class TileKingdomsBoard {
                 for (int d = 0; d < 4; d++) {
                     if (d == slot) continue;
                     if (PlacedTile.edgeOf(tile, d) == TileType.Edge.R) {
-                        long dk = TileKingdomsGame.packPos(lx, ly, d);
+                        long dk = packPos(lx, ly, d);
                         if (!visited.contains(dk)) {
                             // Follow this road exit into the neighbour
                             visited.add(dk); // mark this exit as part of the region
@@ -153,7 +161,7 @@ public class TileKingdomsBoard {
             if (!PlacedTile.isEmpty(nb)) {
                 int opp = TileType.opposite(slot);
                 if (PlacedTile.edgeOf(nb, opp) == TileType.Edge.R) {
-                    long nk = TileKingdomsGame.packPos(nx, ny, opp);
+                    long nk = packPos(nx, ny, opp);
                     if (!visited.contains(nk)) bfsRegion(nx, ny, opp, targetEdge, visited, tileVisited);
                 }
             }
@@ -203,6 +211,15 @@ public class TileKingdomsBoard {
         return new HashSet<>(); // handled inline now
     }
 
+    private long getRegionHash(Set<Long> region) {
+        long hash = 1469598103934665603L; // FNV offset
+        for (long v : region) {
+            hash ^= v;
+            hash *= 1099511628211L;
+        }
+        return hash;
+    }
+
     private String getRegionId(int lx, int ly, int slot) {
         Set<Long> region = getRegion(lx, ly, slot);
         TreeSet<Long> sorted = new TreeSet<>(region);
@@ -223,7 +240,7 @@ public class TileKingdomsBoard {
     }
 
     private boolean bfsCityComplete(int lx, int ly, int slot, Set<Long> region, Set<String> tiles) {
-        long key = TileKingdomsGame.packPos(lx, ly, slot);
+        long key = packPos(lx, ly, slot);
         if (region.contains(key)) return true;
         region.add(key);
         short tile = get(lx, ly);
@@ -235,7 +252,7 @@ public class TileKingdomsBoard {
         if (type != null && type.connectedCity) {
             for (int d = 0; d < 4; d++) {
                 if (PlacedTile.edgeOf(tile, d) == TileType.Edge.C) {
-                    long dk = TileKingdomsGame.packPos(lx, ly, d);
+                    long dk = packPos(lx, ly, d);
                     if (!region.contains(dk)) complete &= bfsCityComplete(lx, ly, d, region, tiles);
                 }
             }
@@ -244,8 +261,14 @@ public class TileKingdomsBoard {
         int nx = lx + DX[slot], ny = ly + DY[slot];
         short nb = get(nx, ny);
         if (PlacedTile.isEmpty(nb)) return false;
-        if (PlacedTile.edgeOf(nb, TileType.opposite(slot)) == TileType.Edge.C)
-            complete &= bfsCityComplete(nx, ny, TileType.opposite(slot), region, tiles);
+//        if (PlacedTile.edgeOf(nb, TileType.opposite(slot)) == TileType.Edge.C)
+//            complete &= bfsCityComplete(nx, ny, TileType.opposite(slot), region, tiles);
+        int opp = TileType.opposite(slot);
+        if (PlacedTile.edgeOf(nb, opp) != TileType.Edge.C) {
+            return false; // НЕ город - город открыт
+        }
+
+        complete &= bfsCityComplete(nx, ny, opp, region, tiles);
         return complete;
     }
 
@@ -262,33 +285,123 @@ public class TileKingdomsBoard {
         if (complete) returnFollowers(region, claims, followersLeft);
     }
 
+//    private boolean bfsRoadComplete(int lx, int ly, int slot, Set<Long> region, Set<String> tiles) {
+//        long key = packPos(lx, ly, slot);
+//        if (region.contains(key)) return true;
+//        region.add(key);
+//        short tile = get(lx, ly);
+//        if (PlacedTile.isEmpty(tile)) return false;
+//        tiles.add(lx + "," + ly);
+//        TileType type = PlacedTile.typeOf(tile);
+//        // Crossroad/T-junction = road endpoint (complete)
+//        if (type == TileType.ROAD_CROSS || type == TileType.ROAD_T) return true;
+//        // Find the other road exit on this tile
+//        boolean complete = true;
+//        for (int d = 0; d < 4; d++) {
+//            if (d == slot || d == TileType.opposite(slot)) continue;
+//            if (PlacedTile.edgeOf(tile, d) == TileType.Edge.R) {
+//                long dk = packPos(lx, ly, d);
+//                if (!region.contains(dk)) complete &= bfsRoadComplete(lx, ly, d, region, tiles);
+//            }
+//        }
+//        // Cross into neighbour at this slot
+//        int nx = lx + DX[slot], ny = ly + DY[slot];
+//        short nb = get(nx, ny);
+
+    /// /        if (PlacedTile.isEmpty(nb)) return false;
+    /// /        if (PlacedTile.edgeOf(nb, TileType.opposite(slot)) == TileType.Edge.R)
+    /// /            complete &= bfsRoadComplete(nx, ny, TileType.opposite(slot), region, tiles);
+    /// /        else return true; // road ends at city/monastery
+//        if (PlacedTile.isEmpty(nb)) return false;
+//
+//        int opp = TileType.opposite(slot);
+//
+//        if (PlacedTile.edgeOf(nb, opp) == TileType.Edge.R) {
+//            complete &= bfsRoadComplete(nx, ny, opp, region, tiles);
+//        } else {
+//            // дорога упёрлась — это нормальный конец
+//            return true;
+//        }
+//        return complete;
+//    }
     private boolean bfsRoadComplete(int lx, int ly, int slot, Set<Long> region, Set<String> tiles) {
-        long key = TileKingdomsGame.packPos(lx, ly, slot);
-        if (region.contains(key)) return true;
-        region.add(key);
-        short tile = get(lx, ly);
-        if (PlacedTile.isEmpty(tile)) return false;
-        tiles.add(lx + "," + ly);
-        TileType type = PlacedTile.typeOf(tile);
-        // Crossroad/T-junction = road endpoint (complete)
-        if (type == TileType.ROAD_CROSS || type == TileType.ROAD_T) return true;
-        // Find the other road exit on this tile
+        Queue<int[]> queue = new ArrayDeque<>();
+        queue.add(new int[]{lx, ly, slot});
         boolean complete = true;
-        for (int d = 0; d < 4; d++) {
-            if (d == slot || d == TileType.opposite(slot)) continue;
-            if (PlacedTile.edgeOf(tile, d) == TileType.Edge.R) {
-                long dk = TileKingdomsGame.packPos(lx, ly, d);
-                if (!region.contains(dk)) complete &= bfsRoadComplete(lx, ly, d, region, tiles);
+
+        while (!queue.isEmpty()) {
+            int[] cur = queue.poll();
+            int cx = cur[0], cy = cur[1], cslot = cur[2];
+            long key = packPos(cx, cy, cslot);
+            if (region.contains(key)) continue;
+            region.add(key);
+
+            short tile = get(cx, cy);
+            if (PlacedTile.isEmpty(tile)) {
+                complete = false; // конец дороги свободен — не завершена
+                continue;
+            }
+
+            tiles.add(cx + "," + cy);
+            TileType type = PlacedTile.typeOf(tile);
+            TileType.Edge edge = PlacedTile.edgeOf(tile, cslot);
+
+            if (edge != TileType.Edge.R) continue;
+            // Перекрёстки и T-джанкции — конец дороги на этом тайле.
+            // НО: нужно всё равно зайти в соседа по входящему слоту, иначе BFS
+            // не обойдёт дорогу, если scoring начат именно с этого endpoint-тайла
+            // (например, ROAD_CROSS — последний размещённый тайл).
+            if (type == TileType.ROAD_CROSS || type == TileType.ROAD_T) {
+                int ex = cx + DX[cslot], ey = cy + DY[cslot];
+                short en = get(ex, ey);
+                if (!PlacedTile.isEmpty(en)) {
+                    int eopp = TileType.opposite(cslot);
+                    if (PlacedTile.edgeOf(en, eopp) == TileType.Edge.R) {
+                        long ek = packPos(ex, ey, eopp);
+                        if (!region.contains(ek)) queue.add(new int[]{ex, ey, eopp});
+                    }
+                }
+                continue; // не распространяться по другим рёбрам этого тайла
+            } // не дорога — игнорируем
+
+            // остальные рёбра на тайле — продолжение дороги
+            for (int d = 0; d < 4; d++) {
+                if (d == cslot) continue;
+                if (PlacedTile.edgeOf(tile, d) == TileType.Edge.R) {
+                    long nk = packPos(cx, cy, d);
+                    if (!region.contains(nk)) queue.add(new int[]{cx, cy, d});
+                }
+            }
+
+            // соседний тайл в направлении cslot
+            int nx = cx + DX[cslot], ny = cy + DY[cslot];
+            short nb = get(nx, ny);
+            int opp = TileType.opposite(cslot);
+
+            if (PlacedTile.isEmpty(nb)) {
+                complete = false; // свободный конец
+            } else if (PlacedTile.edgeOf(nb, opp) == TileType.Edge.R) {
+                long nk = packPos(nx, ny, opp);
+                if (!region.contains(nk)) queue.add(new int[]{nx, ny, opp});
+            } else {
+                TileType ntype = PlacedTile.typeOf(nb);
+                // конец дороги — город или монастырь
+                if (ntype != null && (ntype.monastery || hasCityEdge(nb, opp))) {
+                    complete = complete && true;
+                } else {
+                    complete = false;
+                }
             }
         }
-        // Cross into neighbour at this slot
-        int nx = lx + DX[slot], ny = ly + DY[slot];
-        short nb = get(nx, ny);
-        if (PlacedTile.isEmpty(nb)) return false;
-        if (PlacedTile.edgeOf(nb, TileType.opposite(slot)) == TileType.Edge.R)
-            complete &= bfsRoadComplete(nx, ny, TileType.opposite(slot), region, tiles);
-        else return true; // road ends at city/monastery
+
         return complete;
+    }
+
+    // helper для проверки, есть ли на тайле город в нужной грани
+    private boolean hasCityEdge(short tile, int slot) {
+        TileType type = PlacedTile.typeOf(tile);
+        if (type == null) return false;
+        return PlacedTile.edgeOf(tile, slot) == TileType.Edge.C;
     }
 
     // ── Monastery scoring ─────────────────────────────────────────────────────
@@ -297,7 +410,7 @@ public class TileKingdomsBoard {
         int count = 0;
         for (int dy = -1; dy <= 1; dy++) for (int dx = -1; dx <= 1; dx++) if (!isEmpty(lx + dx, ly + dy)) count++;
         if (onlyIfComplete && count < 9) return;
-        long key = TileKingdomsGame.packPos(lx, ly, TileKingdomsGame.SLOT_CENTER);
+        long key = packPos(lx, ly, SLOT_CENTER);
         Integer owner = claims.get(key);
         if (owner != null && owner >= 0 && owner < scores.length) {
             scores[owner] += count;
