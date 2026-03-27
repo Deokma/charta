@@ -36,7 +36,7 @@ public class PlacedTile {
      */
     public static TileType.Edge edgeOf(short val, int dir) {
         TileType type = typeOf(val);
-        if (type == null) return TileType.Edge.F;
+        if (type == null) return TileType.Edge.FIELD;
         int rot = rotationOf(val);
         // To get logical direction accounting for rotation: subtract rotation
         int logicalDir = ((dir - rot) & 3);

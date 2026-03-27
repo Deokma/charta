@@ -10,34 +10,62 @@ package dev.lucaargolo.charta.common.game.impl.tilekingdoms;
 public enum TileType {
 
     // ── Monasteries ────────────────────────────────────────────────────────────
-    MONASTERY_PLAIN(Edge.F, Edge.F, Edge.F, Edge.F, false, true, 4),
-    MONASTERY_ROAD_S(Edge.F, Edge.F, Edge.R, Edge.F, false, true, 2),
+    MONASTERY_PLAIN(Edge.FIELD, Edge.FIELD, Edge.FIELD, Edge.FIELD, false, true, 4),
+    MONASTERY_ROAD_S(Edge.FIELD, Edge.FIELD, Edge.ROAD, Edge.FIELD, false, true, 2),
 
     // ── Pure roads ─────────────────────────────────────────────────────────────
-    ROAD_STRAIGHT(Edge.R, Edge.F, Edge.R, Edge.F, false, false, 8),   // N-S straight
-    ROAD_CURVE_SE(Edge.F, Edge.R, Edge.R, Edge.F, false, false, 9),   // curve S-E
-    ROAD_T(Edge.F, Edge.R, Edge.R, Edge.R, false, false, 4),   // T-junction (no N)
-    ROAD_CROSS(Edge.R, Edge.R, Edge.R, Edge.R, false, false, 1),   // Crossroads
+    ROAD_STRAIGHT(Edge.ROAD, Edge.FIELD, Edge.ROAD, Edge.FIELD, false, false, 8),   // N-S straight
+    ROAD_CURVE_SE(Edge.FIELD, Edge.ROAD, Edge.ROAD, Edge.FIELD, false, false, 9),   // curve S-E
+    ROAD_T(Edge.FIELD, Edge.ROAD, Edge.ROAD, Edge.ROAD, false, false, 4),   // T-junction (no N)
+    ROAD_CROSS(Edge.ROAD, Edge.ROAD, Edge.ROAD, Edge.ROAD, false, false, 1),   // Crossroads
 
     // ── City cap (one edge) ────────────────────────────────────────────────────
-    CITY_CAP(Edge.C, Edge.F, Edge.F, Edge.F, false, false, 5),   // City on N only
-    CITY_CAP_ROAD_LR(Edge.C, Edge.R, Edge.F, Edge.R, false, false, 3),   // City N, road E-W
-    CITY_CAP_ROAD_T(Edge.C, Edge.R, Edge.R, Edge.R, false, false, 3),   // City N, road T
+    CITY_CAP(Edge.CITY, Edge.FIELD, Edge.FIELD, Edge.FIELD, false, false, 5),   // City on N only
+    CITY_CAP_ROAD_LR(Edge.CITY, Edge.ROAD, Edge.FIELD, Edge.ROAD, false, false, 4),   // City N, road E-W
+    CITY_CAP_ROAD_T(Edge.CITY, Edge.ROAD, Edge.ROAD, Edge.ROAD, false, false, 3),   // City N, road T
+    CITY_CAP_ROAD_SE(Edge.CITY, Edge.ROAD, Edge.ROAD, Edge.FIELD, false, false, 3),   // City N, road S-E
+    CITY_CAP_ROAD_SW(Edge.CITY, Edge.FIELD, Edge.ROAD, Edge.ROAD, false, false, 3),   // City N, road S-W
 
     // ── Two-edge city (connected) ──────────────────────────────────────────────
-    CITY_BRIDGE(Edge.C, Edge.F, Edge.C, Edge.F, true, false, 1),   // City N-S tunnel
-    CITY_CORNER_NE(Edge.C, Edge.C, Edge.F, Edge.F, true, false, 3),   // City corner N-E
-    CITY_CORNER_ROAD(Edge.C, Edge.C, Edge.R, Edge.R, true, false, 3),   // City corner + road
+    CITY_BRIDGE(Edge.CITY, Edge.FIELD, Edge.CITY, Edge.FIELD, true, false, 1),   // City N-S tunnel
+    CITY_BRIDGE_SECURED(Edge.CITY, Edge.FIELD, Edge.CITY, Edge.FIELD, true, false, 2),   // City N-S tunnel secured
+    CITY_CORNER_NE(Edge.CITY, Edge.CITY, Edge.FIELD, Edge.FIELD, true, false, 3),   // City corner N-E
+    CITY_CORNER_NE_SECURED(Edge.CITY, Edge.CITY, Edge.FIELD, Edge.FIELD, true, false, 2),   // City corner N-E secured
+    CITY_CORNER_ROAD(Edge.CITY, Edge.CITY, Edge.ROAD, Edge.ROAD, true, false, 3),   // City corner + road
+    CITY_CORNER_ROAD_SECURED(Edge.CITY, Edge.CITY, Edge.ROAD, Edge.ROAD, true, false, 2),   // City corner + road secured
+    CITY_CAP_NE(Edge.CITY, Edge.CITY, Edge.FIELD, Edge.FIELD, true, false, 2),   // City cap N-E
+
+
+    // TODO: Как здесь это различать? Вроде понял
+    CITY_FIELD(Edge.CITY, Edge.FIELD, Edge.CITY, Edge.FIELD, false, false, 3),   // City N-S tunnel
+
 
     // ── Three-edge city ────────────────────────────────────────────────────────
-    CITY_THREE(Edge.C, Edge.C, Edge.F, Edge.C, true, false, 3),   // City N, E, W
-    CITY_THREE_ROAD(Edge.C, Edge.C, Edge.R, Edge.C, true, false, 2),   // City 3 + road S
+    CITY_THREE(Edge.CITY, Edge.CITY, Edge.FIELD, Edge.CITY, true, false, 3),   // City N, E, W
+    CITY_THREE_SECURED(Edge.CITY, Edge.CITY, Edge.FIELD, Edge.CITY, true, false, 3),   // City N, E, W secured
+    CITY_THREE_ROAD(Edge.CITY, Edge.CITY, Edge.ROAD, Edge.CITY, true, false, 1),   // City 3 + road S
+    CITY_THREE_ROAD_SECURED(Edge.CITY, Edge.CITY, Edge.ROAD, Edge.CITY, true, false, 2),   // City 3 + road secured
 
     // ── Full city ──────────────────────────────────────────────────────────────
-    CITY_FULL(Edge.C, Edge.C, Edge.C, Edge.C, true, false, 1);
+    CITY_FULL(Edge.CITY, Edge.CITY, Edge.CITY, Edge.CITY, true, false, 1); // secured
 
     // ── Starting tile (always placed first) ───────────────────────────────────
     //START(Edge.C, Edge.R, Edge.F, Edge.R, false, false, 1);
+
+    // NEXT UPDATES
+
+//    LAKE(Edge.FIELD, Edge.FIELD, Edge.RIVER, Edge.FIELD, false, false, 2),
+//    RIVER(Edge.FIELD, Edge.RIVER, Edge.FIELD, Edge.RIVER, false, false, 2),
+//    RIVER_WS(Edge.FIELD, Edge.FIELD, Edge.RIVER, Edge.RIVER, false, false, 2),
+//
+//    MONASTERY_RIVER_BRIDGE(Edge.FIELD, Edge.RIVER, Edge.ROAD, Edge.RIVER, false, true, 1),
+//    RIVER_BRIDGE(Edge.ROAD, Edge.RIVER, Edge.ROAD, Edge.RIVER, false, false, 1),
+//    RIVER_WS_ROAD_NE(Edge.ROAD, Edge.ROAD, Edge.RIVER, Edge.RIVER, false, false, 1),
+//
+//    CITY_CAP_RIVER_BRIDGE(Edge.CITY, Edge.RIVER, Edge.ROAD, Edge.RIVER, true, false, 1),
+//
+//    CITY_RIVER_CAPS(Edge.CITY, Edge.RIVER, Edge.CITY, Edge.RIVER, true, false, 1),
+//    CITY_CORNER_RIVER_WS(Edge.CITY, Edge.CITY, Edge.RIVER, Edge.RIVER, true, false, 1),
 
     // ────────────────────────────────────────────────────────────────────────────
 
@@ -70,7 +98,7 @@ public enum TileType {
     /**
      * Edge type. F-Field, R-Road, C-City
      */
-    public enum Edge {F, R, C}
+    public enum Edge {FIELD, ROAD, CITY, RIVER}
 
     /**
      * Total tiles in standard deck.

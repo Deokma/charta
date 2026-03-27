@@ -13,6 +13,10 @@ import java.util.List;
 
 public class TileKingdomsScreen extends GameScreen<TileKingdomsGame, TileKingdomsMenu> {
 
+    // Client-side board cache — rebuilt lazily whenever the grid snapshot changes
+    private TileKingdomsBoard cachedClientBoard = null;
+    private short[]           lastClientGrid    = null;
+
     // ── Layout ────────────────────────────────────────────────────────────────
     private static final int CELL = 32;  // tile size px
     // Board occupies: topBar(28) .. height-bottomBar(63) vertically, full width horizontally
@@ -251,11 +255,11 @@ public class TileKingdomsScreen extends GameScreen<TileKingdomsGame, TileKingdom
 
         // ── City fills (full edge bands) ─────────────────────────────────────
         for (int dir = 0; dir < 4; dir++) {
-            if (PlacedTile.edgeOf(val, dir) == TileType.Edge.C) drawCityBand(g, sx, sy, dir, C);
+            if (PlacedTile.edgeOf(val, dir) == TileType.Edge.CITY) drawCityBand(g, sx, sy, dir, C);
         }
         if (type.connectedCity) {
             int cityN = 0;
-            for (int d = 0; d < 4; d++) if (PlacedTile.edgeOf(val, d) == TileType.Edge.C) cityN++;
+            for (int d = 0; d < 4; d++) if (PlacedTile.edgeOf(val, d) == TileType.Edge.CITY) cityN++;
             if (cityN >= 2) g.fill(sx + C / 4, sy + C / 4, sx + 3 * C / 4, sy + 3 * C / 4, C_CITY);
         }
 
@@ -264,7 +268,7 @@ public class TileKingdomsScreen extends GameScreen<TileKingdomsGame, TileKingdom
         boolean[] roadExit = new boolean[4];
         int roadCount = 0;
         for (int d = 0; d < 4; d++)
-            if (PlacedTile.edgeOf(val, d) == TileType.Edge.R) {
+            if (PlacedTile.edgeOf(val, d) == TileType.Edge.ROAD) {
                 roadExit[d] = true;
                 roadCount++;
             }
@@ -387,12 +391,12 @@ public class TileKingdomsScreen extends GameScreen<TileKingdomsGame, TileKingdom
         short val = PlacedTile.pack(type, rot);
         for (int d = 0; d < 4; d++) {
             TileType.Edge e = PlacedTile.edgeOf(val, d);
-            if (e == TileType.Edge.C) drawCityBand(g, sx, sy, d, C);
+            if (e == TileType.Edge.CITY) drawCityBand(g, sx, sy, d, C);
         }
         boolean[] roadExit = new boolean[4];
         int rc = 0;
         for (int d = 0; d < 4; d++)
-            if (PlacedTile.edgeOf(val, d) == TileType.Edge.R) {
+            if (PlacedTile.edgeOf(val, d) == TileType.Edge.ROAD) {
                 roadExit[d] = true;
                 rc++;
             }
@@ -463,6 +467,45 @@ public class TileKingdomsScreen extends GameScreen<TileKingdomsGame, TileKingdom
     }
 
     // ── Claim buttons ─────────────────────────────────────────────────────────
+//    private void drawClaimButtons(GuiGraphics g, int mx, int my, short[] grid, int[] claims) {
+//        int lx = menu.getLastPlacedX(), ly = menu.getLastPlacedY();
+//        int sx = tileScreenX(lx), sy = tileScreenY(ly);
+//        int gi = (ly + TileKingdomsBoard.HALF) * TileKingdomsBoard.SIZE + (lx + TileKingdomsBoard.HALF);
+//        if (gi < 0 || gi >= grid.length || PlacedTile.isEmpty(grid[gi])) return;
+//        short tile = grid[gi];
+//        TileType type = PlacedTile.typeOf(tile);
+//        int C = cs();
+//        // Highlight the just-placed tile
+//        g.fill(sx, sy, sx + C, sy + 1, 0xFFFFFF00);
+//        g.fill(sx, sy + C - 1, sx + C, sy + C, 0xFFFFFF00);
+//        g.fill(sx, sy, sx + 1, sy + C, 0xFFFFFF00);
+//        g.fill(sx + C - 1, sy, sx + C, sy + C, 0xFFFFFF00);
+//
+//        for (int slot = 0; slot < 5; slot++) {
+//            boolean valid = false;
+//            if (slot < 4) {
+//                TileType.Edge e = PlacedTile.edgeOf(tile, slot);
+//                valid = (e != TileType.Edge.F) && !isClaimed(lx, ly, slot, claims);
+//            } else valid = type != null && type.monastery && !isClaimed(lx, ly, slot, claims);
+//            if (!valid) continue;
+//            int[] fp = featurePt(sx, sy, slot);
+//            int r = 10; // larger hit radius
+//            boolean hov = Math.abs(mx - fp[0]) <= r && Math.abs(my - fp[1]) <= r;
+//            // Outer glow when hovered
+//            if (hov) g.fill(fp[0] - r - 2, fp[1] - r - 2, fp[0] + r + 2, fp[1] + r + 2, 0x66FFFF00);
+//            // Circle background
+//            g.fill(fp[0] - r, fp[1] - r, fp[0] + r, fp[1] + r, hov ? 0xEEFFE040 : 0xCC2255AA);
+//            // Inner border
+//            g.fill(fp[0] - r, fp[1] - r, fp[0] + r, fp[1] - r + 1, hov ? 0xFFFFFF99 : 0xFF4488CC);
+//            g.fill(fp[0] - r, fp[1] + r - 1, fp[0] + r, fp[1] + r, hov ? 0xFFFFFF99 : 0xFF4488CC);
+//            g.fill(fp[0] - r, fp[1] - r, fp[0] - r + 1, fp[1] + r, hov ? 0xFFFFFF99 : 0xFF4488CC);
+//            g.fill(fp[0] + r - 1, fp[1] - r, fp[0] + r, fp[1] + r, hov ? 0xFFFFFF99 : 0xFF4488CC);
+//            // Follower icon: + symbol centred
+//            int fw = font.width("+");
+//            g.drawString(font, "+", fp[0] - fw / 2, fp[1] - 4, hov ? 0xFF000000 : 0xFFFFFFFF, false);
+//        }
+//    }
+
     private void drawClaimButtons(GuiGraphics g, int mx, int my, short[] grid, int[] claims) {
         int lx = menu.getLastPlacedX(), ly = menu.getLastPlacedY();
         int sx = tileScreenX(lx), sy = tileScreenY(ly);
@@ -471,32 +514,38 @@ public class TileKingdomsScreen extends GameScreen<TileKingdomsGame, TileKingdom
         short tile = grid[gi];
         TileType type = PlacedTile.typeOf(tile);
         int C = cs();
+
         // Highlight the just-placed tile
-        g.fill(sx, sy, sx + C, sy + 1, 0xFFFFFF00);
-        g.fill(sx, sy + C - 1, sx + C, sy + C, 0xFFFFFF00);
-        g.fill(sx, sy, sx + 1, sy + C, 0xFFFFFF00);
-        g.fill(sx + C - 1, sy, sx + C, sy + C, 0xFFFFFF00);
+        g.fill(sx,     sy,         sx + C, sy + 1,     0xFFFFFF00);
+        g.fill(sx,     sy + C - 1, sx + C, sy + C,     0xFFFFFF00);
+        g.fill(sx,     sy,         sx + 1, sy + C,     0xFFFFFF00);
+        g.fill(sx + C - 1, sy,     sx + C, sy + C,     0xFFFFFF00);
+
+        TileKingdomsBoard cb = getClientBoard(); // ← NEW: client-side board
 
         for (int slot = 0; slot < 5; slot++) {
-            boolean valid = false;
+            boolean valid;
             if (slot < 4) {
                 TileType.Edge e = PlacedTile.edgeOf(tile, slot);
-                valid = (e != TileType.Edge.F) && !isClaimed(lx, ly, slot, claims);
-            } else valid = type != null && type.monastery && !isClaimed(lx, ly, slot, claims);
+                valid = (e != TileType.Edge.FIELD)
+                        && !isClaimed(lx, ly, slot, claims)
+                        && !cb.isFeatureComplete(lx, ly, slot); // ← NEW
+            } else {
+                valid = type != null && type.monastery
+                        && !isClaimed(lx, ly, slot, claims)
+                        && !cb.isMonasteryComplete(lx, ly);     // ← NEW
+            }
             if (!valid) continue;
+
             int[] fp = featurePt(sx, sy, slot);
-            int r = 10; // larger hit radius
+            int r = 10;
             boolean hov = Math.abs(mx - fp[0]) <= r && Math.abs(my - fp[1]) <= r;
-            // Outer glow when hovered
             if (hov) g.fill(fp[0] - r - 2, fp[1] - r - 2, fp[0] + r + 2, fp[1] + r + 2, 0x66FFFF00);
-            // Circle background
             g.fill(fp[0] - r, fp[1] - r, fp[0] + r, fp[1] + r, hov ? 0xEEFFE040 : 0xCC2255AA);
-            // Inner border
             g.fill(fp[0] - r, fp[1] - r, fp[0] + r, fp[1] - r + 1, hov ? 0xFFFFFF99 : 0xFF4488CC);
             g.fill(fp[0] - r, fp[1] + r - 1, fp[0] + r, fp[1] + r, hov ? 0xFFFFFF99 : 0xFF4488CC);
             g.fill(fp[0] - r, fp[1] - r, fp[0] - r + 1, fp[1] + r, hov ? 0xFFFFFF99 : 0xFF4488CC);
             g.fill(fp[0] + r - 1, fp[1] - r, fp[0] + r, fp[1] + r, hov ? 0xFFFFFF99 : 0xFF4488CC);
-            // Follower icon: + symbol centred
             int fw = font.width("+");
             g.drawString(font, "+", fp[0] - fw / 2, fp[1] - 4, hov ? 0xFF000000 : 0xFFFFFFFF, false);
         }
@@ -647,8 +696,19 @@ public class TileKingdomsScreen extends GameScreen<TileKingdomsGame, TileKingdom
                     short tile = grid[gi];
                     TileType type = PlacedTile.typeOf(tile);
                     for (int slot = 0; slot < 5; slot++) {
-                        boolean valid = slot < 4 ? (PlacedTile.edgeOf(tile, slot) != TileType.Edge.F && !isClaimed(lx, ly, slot, claimsArr))
-                                : (type != null && type.monastery && !isClaimed(lx, ly, slot, claimsArr));
+                        //boolean valid = slot < 4 ? (PlacedTile.edgeOf(tile, slot) != TileType.Edge.F && !isClaimed(lx, ly, slot, claimsArr))
+                        //        : (type != null && type.monastery && !isClaimed(lx, ly, slot, claimsArr));
+                        TileKingdomsBoard cb = getClientBoard();
+                        boolean valid;
+                        if (slot < 4) {
+                            valid = PlacedTile.edgeOf(tile, slot) != TileType.Edge.FIELD
+                                    && !isClaimed(lx, ly, slot, claimsArr)
+                                    && !cb.isFeatureComplete(lx, ly, slot);   // ← NEW
+                        } else {
+                            valid = type != null && type.monastery
+                                    && !isClaimed(lx, ly, slot, claimsArr)
+                                    && !cb.isMonasteryComplete(lx, ly);       // ← NEW
+                        }
                         if (!valid) continue;
                         int[] fp = featurePt(sx, sy, slot);
                         if (Math.abs(mx - fp[0]) <= 10 && Math.abs(my - fp[1]) <= 10) {
@@ -732,5 +792,20 @@ public class TileKingdomsScreen extends GameScreen<TileKingdomsGame, TileKingdom
             }
         }
         return hasNb;
+    }
+
+    /**
+     * Returns a TileKingdomsBoard built from the latest client grid snapshot.
+     * Cached so it is only rebuilt when a new board packet arrives.
+     */
+    public TileKingdomsBoard getClientBoard() {
+        short[] grid = menu.getBoardGrid();
+
+        if (cachedClientBoard == null || grid != lastClientGrid) {
+            cachedClientBoard = TileKingdomsBoard.fromGrid(grid);
+            lastClientGrid = grid;
+        }
+
+        return cachedClientBoard;
     }
 }

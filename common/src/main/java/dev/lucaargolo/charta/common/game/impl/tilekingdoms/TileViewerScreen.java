@@ -1,6 +1,5 @@
 package dev.lucaargolo.charta.common.game.impl.tilekingdoms;
 
-import dev.lucaargolo.charta.common.ChartaMod;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -94,11 +93,11 @@ public class TileViewerScreen extends Screen {
 
         // City bands
         for (int dir = 0; dir < 4; dir++) {
-            if (PlacedTile.edgeOf(val, dir) == TileType.Edge.C) drawCityBand(g, px, py, dir, ps);
+            if (PlacedTile.edgeOf(val, dir) == TileType.Edge.CITY) drawCityBand(g, px, py, dir, ps);
         }
         if (type.connectedCity) {
             int ce = 0;
-            for (int d = 0; d < 4; d++) if (PlacedTile.edgeOf(val, d) == TileType.Edge.C) ce++;
+            for (int d = 0; d < 4; d++) if (PlacedTile.edgeOf(val, d) == TileType.Edge.CITY) ce++;
             if (ce >= 2) g.fill(px + ps / 4, py + ps / 4, px + 3 * ps / 4, py + 3 * ps / 4, C_CITY);
         }
 
@@ -106,7 +105,7 @@ public class TileViewerScreen extends Screen {
         boolean[] re = new boolean[4];
         int rc = 0;
         for (int d = 0; d < 4; d++)
-            if (PlacedTile.edgeOf(val, d) == TileType.Edge.R) {
+            if (PlacedTile.edgeOf(val, d) == TileType.Edge.ROAD) {
                 re[d] = true;
                 rc++;
             }

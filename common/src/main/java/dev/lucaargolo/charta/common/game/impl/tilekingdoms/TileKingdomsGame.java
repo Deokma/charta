@@ -178,7 +178,7 @@ public class TileKingdomsGame extends TileKingdomsGameBase {
             if (type == null || !type.monastery) return;
         } else {
             TileType.Edge e = PlacedTile.edgeOf(tile, featureSlot);
-            if (e == TileType.Edge.F) return;
+            if (e == TileType.Edge.FIELD) return;
         }
         if (isFeatureOwned(lx, ly, featureSlot, tile)) {
             table(Component.literal("Already claimed!").withStyle(ChatFormatting.RED));
@@ -201,15 +201,40 @@ public class TileKingdomsGame extends TileKingdomsGameBase {
         return false;
     }
 
+    /**
+     * Returns true if the tile at (lx, ly) has at least one slot that is:
+     *   • a non-Field edge (Road or City), or a monastery centre
+     *   • NOT already owned by any player (region BFS)
+     *   • NOT already completed (closed feature)
+     *
+     * Uncompleted monastery counts as free if unclaimed and not surrounded.
+     */
     private boolean hasFreeFeature(int lx, int ly) {
         short tile = board.get(lx, ly);
         if (PlacedTile.isEmpty(tile)) return false;
         TileType type = PlacedTile.typeOf(tile);
         for (int dir = 0; dir < 4; dir++) {
-            if (PlacedTile.edgeOf(tile, dir) != TileType.Edge.F && !isFeatureOwned(lx, ly, dir, tile)) return true;
+            if (PlacedTile.edgeOf(tile, dir) != TileType.Edge.FIELD
+                    && !isFeatureOwned(lx, ly, dir, tile)
+                    && !board.isFeatureComplete(lx, ly, dir)) return true;
         }
-        return type != null && type.monastery && !claims.containsKey(packPos(lx, ly, SLOT_CENTER));
+        // Monastery centre
+        if (type != null && type.monastery
+                && !claims.containsKey(packPos(lx, ly, SLOT_CENTER))
+                && !board.isMonasteryComplete(lx, ly)) return true;
+        return false;
     }
+
+
+//    private boolean hasFreeFeature(int lx, int ly) {
+//        short tile = board.get(lx, ly);
+//        if (PlacedTile.isEmpty(tile)) return false;
+//        TileType type = PlacedTile.typeOf(tile);
+//        for (int dir = 0; dir < 4; dir++) {
+//            if (PlacedTile.edgeOf(tile, dir) != TileType.Edge.F && !isFeatureOwned(lx, ly, dir, tile)) return true;
+//        }
+//        return type != null && type.monastery && !claims.containsKey(packPos(lx, ly, SLOT_CENTER));
+//    }
 
     public void rotateTile() {
         if (phase == PHASE_PLACE && currentTileType != null) {
@@ -309,4 +334,6 @@ public class TileKingdomsGame extends TileKingdomsGameBase {
             claimsSnapshot[i++] = packClaimInt(lx, ly, slot, e.getValue());
         }
     }
+
+
 }

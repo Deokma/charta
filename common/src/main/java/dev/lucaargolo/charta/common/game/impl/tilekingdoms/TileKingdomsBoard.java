@@ -91,9 +91,9 @@ public class TileKingdomsBoard {
         Set<Long> visited = new HashSet<>();
         short tile = get(lx, ly);
         if (PlacedTile.isEmpty(tile)) return visited;
-        TileType.Edge edge = (slot == SLOT_CENTER) ? TileType.Edge.F : PlacedTile.edgeOf(tile, slot);
-        if (edge == TileType.Edge.F) return visited;
-        bfsRegion(lx, ly, slot, edge, visited, new HashSet<>());
+        TileType.Edge edge = (slot == SLOT_CENTER) ? TileType.Edge.FIELD : PlacedTile.edgeOf(tile, slot);
+        if (edge == TileType.Edge.FIELD) return visited;
+        bfsRegion(lx, ly, slot, edge, visited);
         return visited;
     }
 
@@ -103,71 +103,146 @@ public class TileKingdomsBoard {
      * For roads: ROAD_CROSS and ROAD_T are endpoints (roads terminate there).
      * For cities: connectedCity tiles spread across all city edges.
      */
-    private void bfsRegion(int lx, int ly, int slot, TileType.Edge targetEdge,
-                           Set<Long> visited, Set<String> tileVisited) {
-        long posKey = packPos(lx, ly, slot);
-        if (visited.contains(posKey)) return;
-        visited.add(posKey);
-        short tile = get(lx, ly);
-        if (PlacedTile.isEmpty(tile)) return;
-        TileType type = PlacedTile.typeOf(tile);
-        if (type == null) return;
+//    private void bfsRegion(int lx, int ly, int slot, TileType.Edge targetEdge,
+//                           Set<Long> visited) {
+//        long posKey = packPos(lx, ly, slot);
+//        if (visited.contains(posKey)) return;
+//        visited.add(posKey);
+//        short tile = get(lx, ly);
+//        if (PlacedTile.isEmpty(tile)) return;
+//        TileType type = PlacedTile.typeOf(tile);
+//        if (type == null) return;
+//
+//        if (targetEdge == TileType.Edge.CITY) {
+//            // Cities: spread to all connected city edges on this tile
+//            if (type.connectedCity) {
+//                for (int d = 0; d < 4; d++) {
+//                    if (PlacedTile.edgeOf(tile, d) == TileType.Edge.CITY) {
+//                        long dk = packPos(lx, ly, d);
+//                        if (!visited.contains(dk)) bfsRegion(lx, ly, d, targetEdge, visited);
+//                    }
+//                }
+//            }
+//            // Cross into neighbour via this slot
+//            int nx = lx + DX[slot], ny = ly + DY[slot];
+//            short nb = get(nx, ny);
+//            if (!PlacedTile.isEmpty(nb)) {
+//                int opp = TileType.opposite(slot);
+//                if (PlacedTile.edgeOf(nb, opp) == TileType.Edge.CITY)
+//                    bfsRegion(nx, ny, opp, targetEdge, visited);
+//            }
+//        } else {
+//            // Roads: find connected road exits on this tile and follow them
+//            // ROAD_CROSS and ROAD_T: all roads terminate here (no through-connection)
+//            boolean isEndpoint = (type == TileType.ROAD_CROSS || type == TileType.ROAD_T);
+//            if (!isEndpoint) {
+//                // Follow road through the tile: find the OTHER road exit(s) and traverse them
+//                for (int d = 0; d < 4; d++) {
+//                    if (d == slot) continue;
+//                    if (PlacedTile.edgeOf(tile, d) == TileType.Edge.ROAD) {
+//                        long dk = packPos(lx, ly, d);
+//                        if (!visited.contains(dk)) {
+//                            // Follow this road exit into the neighbour
+//                            visited.add(dk); // mark this exit as part of the region
+//                            int nx = lx + DX[d], ny = ly + DY[d];
+//                            short nb = get(nx, ny);
+//                            if (!PlacedTile.isEmpty(nb)) {
+//                                int opp = TileType.opposite(d);
+//                                if (PlacedTile.edgeOf(nb, opp) == TileType.Edge.ROAD)
+//                                    bfsRegion(nx, ny, opp, targetEdge, visited);
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//            // Also cross into neighbour via the incoming slot (entry edge)
+//            int nx = lx + DX[slot], ny = ly + DY[slot];
+//            short nb = get(nx, ny);
+//            if (!PlacedTile.isEmpty(nb)) {
+//                int opp = TileType.opposite(slot);
+//                if (PlacedTile.edgeOf(nb, opp) == TileType.Edge.ROAD) {
+//                    long nk = packPos(nx, ny, opp);
+//                    if (!visited.contains(nk)) bfsRegion(nx, ny, opp, targetEdge, visited);
+//                }
+//            }
+//        }
+//    }
+    /**
+     * Iterative BFS that collects all (lx,ly,slot) half-edges belonging to the
+     * same connected road or city feature.
+     *
+     * Half-edge connections:
+     *   - across tiles  : (lx,ly,d) ↔ (lx+DX[d], ly+DY[d], opp(d))
+     *   - within tile   : all road/city exits connected (non-terminus tiles only)
+     *
+     * Terminus tiles (ROAD_CROSS, ROAD_T): their road exits are isolated endpoints –
+     * they do NOT connect to each other through the tile.
+     */
+    private void bfsRegion(int startLx, int startLy, int startSlot,
+                           TileType.Edge targetEdge, Set<Long> visited) {
+        Queue<int[]> queue = new ArrayDeque<>();
+        queue.add(new int[]{startLx, startLy, startSlot});
 
-        if (targetEdge == TileType.Edge.C) {
-            // Cities: spread to all connected city edges on this tile
-            if (type.connectedCity) {
-                for (int d = 0; d < 4; d++) {
-                    if (PlacedTile.edgeOf(tile, d) == TileType.Edge.C) {
-                        long dk = packPos(lx, ly, d);
-                        if (!visited.contains(dk)) bfsRegion(lx, ly, d, targetEdge, visited, tileVisited);
-                    }
-                }
-            }
-            // Cross into neighbour via this slot
-            int nx = lx + DX[slot], ny = ly + DY[slot];
-            short nb = get(nx, ny);
-            if (!PlacedTile.isEmpty(nb)) {
-                int opp = TileType.opposite(slot);
-                if (PlacedTile.edgeOf(nb, opp) == TileType.Edge.C)
-                    bfsRegion(nx, ny, opp, targetEdge, visited, tileVisited);
-            }
-        } else {
-            // Roads: find connected road exits on this tile and follow them
-            // ROAD_CROSS and ROAD_T: all roads terminate here (no through-connection)
-            boolean isEndpoint = (type == TileType.ROAD_CROSS || type == TileType.ROAD_T);
-            if (!isEndpoint) {
-                // Follow road through the tile: find the OTHER road exit(s) and traverse them
-                for (int d = 0; d < 4; d++) {
-                    if (d == slot) continue;
-                    if (PlacedTile.edgeOf(tile, d) == TileType.Edge.R) {
-                        long dk = packPos(lx, ly, d);
-                        if (!visited.contains(dk)) {
-                            // Follow this road exit into the neighbour
-                            visited.add(dk); // mark this exit as part of the region
-                            int nx = lx + DX[d], ny = ly + DY[d];
-                            short nb = get(nx, ny);
-                            if (!PlacedTile.isEmpty(nb)) {
-                                int opp = TileType.opposite(d);
-                                if (PlacedTile.edgeOf(nb, opp) == TileType.Edge.R)
-                                    bfsRegion(nx, ny, opp, targetEdge, visited, tileVisited);
-                            }
+        while (!queue.isEmpty()) {
+            int[] cur = queue.poll();
+            int lx = cur[0], ly = cur[1], slot = cur[2];
+            long key = packPos(lx, ly, slot);
+            if (visited.contains(key)) continue;
+            visited.add(key);
+
+            short tile = get(lx, ly);
+            if (PlacedTile.isEmpty(tile)) continue;
+            TileType type = PlacedTile.typeOf(tile);
+            if (type == null) continue;
+
+            if (targetEdge == TileType.Edge.CITY) {
+                // ── City: spread within connected-city tile, then cross ───────────
+                if (type.connectedCity) {
+                    for (int d = 0; d < 4; d++) {
+                        if (PlacedTile.edgeOf(tile, d) == TileType.Edge.CITY) {
+                            long dk = packPos(lx, ly, d);
+                            if (!visited.contains(dk)) queue.add(new int[]{lx, ly, d});
                         }
                     }
                 }
-            }
-            // Also cross into neighbour via the incoming slot (entry edge)
-            int nx = lx + DX[slot], ny = ly + DY[slot];
-            short nb = get(nx, ny);
-            if (!PlacedTile.isEmpty(nb)) {
-                int opp = TileType.opposite(slot);
-                if (PlacedTile.edgeOf(nb, opp) == TileType.Edge.R) {
-                    long nk = packPos(nx, ny, opp);
-                    if (!visited.contains(nk)) bfsRegion(nx, ny, opp, targetEdge, visited, tileVisited);
+                int nx = lx + DX[slot], ny = ly + DY[slot];
+                short nb = get(nx, ny);
+                if (!PlacedTile.isEmpty(nb)) {
+                    int opp = TileType.opposite(slot);
+                    if (PlacedTile.edgeOf(nb, opp) == TileType.Edge.CITY) {
+                        long nk = packPos(nx, ny, opp);
+                        if (!visited.contains(nk)) queue.add(new int[]{nx, ny, opp});
+                    }
+                }
+
+            } else {
+                // ── Road: terminus tiles isolate arms, normal tiles pass through ──
+                boolean terminus = (type == TileType.ROAD_CROSS || type == TileType.ROAD_T);
+
+                // Within-tile: connect all road exits (non-terminus only)
+                if (!terminus) {
+                    for (int d = 0; d < 4; d++) {
+                        if (d == slot) continue;
+                        if (PlacedTile.edgeOf(tile, d) == TileType.Edge.ROAD) {
+                            long dk = packPos(lx, ly, d);
+                            if (!visited.contains(dk)) queue.add(new int[]{lx, ly, d});
+                        }
+                    }
+                }
+
+                // Cross-tile: follow road outward through edge 'slot'
+                int nx = lx + DX[slot], ny = ly + DY[slot];
+                short nb = get(nx, ny);
+                if (!PlacedTile.isEmpty(nb)) {
+                    int opp = TileType.opposite(slot);
+                    if (PlacedTile.edgeOf(nb, opp) == TileType.Edge.ROAD) {
+                        long nk = packPos(nx, ny, opp);
+                        if (!visited.contains(nk)) queue.add(new int[]{nx, ny, opp});
+                    }
                 }
             }
         }
     }
-
     // ── Scoring after tile placement ──────────────────────────────────────────
 
     /**
@@ -180,18 +255,17 @@ public class TileKingdomsBoard {
         if (PlacedTile.isEmpty(tile)) return;
         TileType type = PlacedTile.typeOf(tile);
 
-        Set<String> processedRegions = new HashSet<>();
+        Set<Long> processedRegions = new HashSet<>();
 
         // Check each edge
         for (int dir = 0; dir < 4; dir++) {
             TileType.Edge edge = PlacedTile.edgeOf(tile, dir);
-            if (edge == TileType.Edge.F) continue;
-            String regionId = getRegionId(lx, ly, dir);
+            if (edge == TileType.Edge.FIELD) continue;
+            long regionId = getRegionId(lx, ly, dir);
             if (processedRegions.contains(regionId)) continue;
             processedRegions.add(regionId);
-
-            if (edge == TileType.Edge.C) scoreCity(lx, ly, dir, claims, nPlayers, scores, followersLeft, true);
-            else if (edge == TileType.Edge.R) scoreRoad(lx, ly, dir, claims, nPlayers, scores, followersLeft, true);
+            if (edge == TileType.Edge.CITY) scoreCity(lx, ly, dir, claims, nPlayers, scores, followersLeft, true);
+            else if (edge == TileType.Edge.ROAD) scoreRoad(lx, ly, dir, claims, nPlayers, scores, followersLeft, true);
         }
         // Monastery
         if (type != null && type.monastery) scoreMonastery(lx, ly, claims, nPlayers, scores, followersLeft, true);
@@ -220,10 +294,15 @@ public class TileKingdomsBoard {
         return hash;
     }
 
-    private String getRegionId(int lx, int ly, int slot) {
+//    private String getRegionId(int lx, int ly, int slot) {
+//        Set<Long> region = getRegion(lx, ly, slot);
+//        TreeSet<Long> sorted = new TreeSet<>(region);
+//        return sorted.toString();
+//    }
+
+    private long getRegionId(int lx, int ly, int slot) {
         Set<Long> region = getRegion(lx, ly, slot);
-        TreeSet<Long> sorted = new TreeSet<>(region);
-        return sorted.toString();
+        return getRegionHash(region);
     }
 
     // ── City scoring ──────────────────────────────────────────────────────────
@@ -251,7 +330,7 @@ public class TileKingdomsBoard {
         // Spread within tile for connected city
         if (type != null && type.connectedCity) {
             for (int d = 0; d < 4; d++) {
-                if (PlacedTile.edgeOf(tile, d) == TileType.Edge.C) {
+                if (PlacedTile.edgeOf(tile, d) == TileType.Edge.CITY) {
                     long dk = packPos(lx, ly, d);
                     if (!region.contains(dk)) complete &= bfsCityComplete(lx, ly, d, region, tiles);
                 }
@@ -264,7 +343,7 @@ public class TileKingdomsBoard {
 //        if (PlacedTile.edgeOf(nb, TileType.opposite(slot)) == TileType.Edge.C)
 //            complete &= bfsCityComplete(nx, ny, TileType.opposite(slot), region, tiles);
         int opp = TileType.opposite(slot);
-        if (PlacedTile.edgeOf(nb, opp) != TileType.Edge.C) {
+        if (PlacedTile.edgeOf(nb, opp) != TileType.Edge.CITY) {
             return false; // НЕ город - город открыт
         }
 
@@ -324,84 +403,171 @@ public class TileKingdomsBoard {
 //        }
 //        return complete;
 //    }
-    private boolean bfsRoadComplete(int lx, int ly, int slot, Set<Long> region, Set<String> tiles) {
+
+
+
+//    private boolean bfsRoadComplete(int lx, int ly, int slot, Set<Long> region, Set<String> tiles) {
+//        Queue<int[]> queue = new ArrayDeque<>();
+//        queue.add(new int[]{lx, ly, slot});
+//        boolean complete = true;
+//
+//        while (!queue.isEmpty()) {
+//            int[] cur = queue.poll();
+//            int cx = cur[0], cy = cur[1], cslot = cur[2];
+//            long key = packPos(cx, cy, cslot);
+//            if (region.contains(key)) continue;
+//            region.add(key);
+//
+//            short tile = get(cx, cy);
+//            if (PlacedTile.isEmpty(tile)) {
+//                complete = false; // конец дороги свободен — не завершена
+//                continue;
+//            }
+//
+//            tiles.add(cx + "," + cy);
+//            TileType type = PlacedTile.typeOf(tile);
+//            TileType.Edge edge = PlacedTile.edgeOf(tile, cslot);
+//
+//            if (edge != TileType.Edge.ROAD) continue;
+//            // Перекрёстки и T-джанкции — конец дороги на этом тайле.
+//            // НО: нужно всё равно зайти в соседа по входящему слоту, иначе BFS
+//            // не обойдёт дорогу, если scoring начат именно с этого endpoint-тайла
+//            // (например, ROAD_CROSS — последний размещённый тайл).
+//            if (type == TileType.ROAD_CROSS || type == TileType.ROAD_T) {
+//                int ex = cx + DX[cslot], ey = cy + DY[cslot];
+//                short en = get(ex, ey);
+//                if (!PlacedTile.isEmpty(en)) {
+//                    int eopp = TileType.opposite(cslot);
+//                    if (PlacedTile.edgeOf(en, eopp) == TileType.Edge.ROAD) {
+//                        long ek = packPos(ex, ey, eopp);
+//                        if (!region.contains(ek)) queue.add(new int[]{ex, ey, eopp});
+//                    }
+//                }
+//                continue; // не распространяться по другим рёбрам этого тайла
+//            } // не дорога — игнорируем
+//
+//            // остальные рёбра на тайле — продолжение дороги
+//            for (int d = 0; d < 4; d++) {
+//                if (d == cslot) continue;
+//                if (PlacedTile.edgeOf(tile, d) == TileType.Edge.ROAD) {
+//                    long nk = packPos(cx, cy, d);
+//                    if (!region.contains(nk)) queue.add(new int[]{cx, cy, d});
+//                }
+//            }
+//
+//            // соседний тайл в направлении cslot
+//            int nx = cx + DX[cslot], ny = cy + DY[cslot];
+//            short nb = get(nx, ny);
+//            int opp = TileType.opposite(cslot);
+//
+////            if (PlacedTile.isEmpty(nb)) {
+////                complete = false; // свободный конец
+////            } else if (PlacedTile.edgeOf(nb, opp) == TileType.Edge.R) {
+//            TileType ntype = PlacedTile.typeOf(nb);
+//
+//            if (PlacedTile.isEmpty(nb)) {
+//                complete = false;
+//            } else if (ntype != null && PlacedTile.edgeOf(nb, opp) == TileType.Edge.ROAD) {
+//                long nk = packPos(nx, ny, opp);
+//                if (!region.contains(nk)) queue.add(new int[]{nx, ny, opp});
+//            } else {
+//                ntype = PlacedTile.typeOf(nb);
+//                // конец дороги — город или монастырь
+//                if (ntype != null && (ntype.monastery || hasCityEdge(nb, opp))) {
+//                    complete = complete && true;
+//                } else {
+//                    complete = false;
+//                }
+//            }
+//        }
+//
+//        return complete;
+//    }
+    /**
+     * BFS completeness check for a road feature starting at (startLx, startLy, startSlot).
+     *
+     * A road is COMPLETE when every open arm is capped:
+     *   - by ROAD_CROSS or ROAD_T (valid road terminus)
+     *   - by a city/monastery neighbour (road enters a city gate)
+     *
+     * A road is INCOMPLETE if any arm leads to an empty board position.
+     *
+     * The "going-back" problem solves itself: when BFS crosses from A to B and
+     * back to A, A is already in `region` → silently skipped. No special-casing needed.
+     */
+    private boolean bfsRoadComplete(int startLx, int startLy, int startSlot,
+                                    Set<Long> region, Set<String> tiles) {
         Queue<int[]> queue = new ArrayDeque<>();
-        queue.add(new int[]{lx, ly, slot});
+        queue.add(new int[]{startLx, startLy, startSlot});
         boolean complete = true;
 
         while (!queue.isEmpty()) {
             int[] cur = queue.poll();
-            int cx = cur[0], cy = cur[1], cslot = cur[2];
-            long key = packPos(cx, cy, cslot);
+            int lx = cur[0], ly = cur[1], slot = cur[2];
+            long key = packPos(lx, ly, slot);
             if (region.contains(key)) continue;
             region.add(key);
 
-            short tile = get(cx, cy);
+            short tile = get(lx, ly);
             if (PlacedTile.isEmpty(tile)) {
-                complete = false; // конец дороги свободен — не завершена
+                // Half-edge points into empty space → open road end
+                complete = false;
                 continue;
             }
 
-            tiles.add(cx + "," + cy);
+            TileType.Edge edge = PlacedTile.edgeOf(tile, slot);
+            if (edge != TileType.Edge.ROAD) {
+                // Non-road edge (city gate, field) → road capped here, not incomplete
+                continue;
+            }
+
             TileType type = PlacedTile.typeOf(tile);
-            TileType.Edge edge = PlacedTile.edgeOf(tile, cslot);
+            if (type == null) continue;
+            tiles.add(lx + "," + ly);
 
-            if (edge != TileType.Edge.R) continue;
-            // Перекрёстки и T-джанкции — конец дороги на этом тайле.
-            // НО: нужно всё равно зайти в соседа по входящему слоту, иначе BFS
-            // не обойдёт дорогу, если scoring начат именно с этого endpoint-тайла
-            // (например, ROAD_CROSS — последний размещённый тайл).
-            if (type == TileType.ROAD_CROSS || type == TileType.ROAD_T) {
-                int ex = cx + DX[cslot], ey = cy + DY[cslot];
-                short en = get(ex, ey);
-                if (!PlacedTile.isEmpty(en)) {
-                    int eopp = TileType.opposite(cslot);
-                    if (PlacedTile.edgeOf(en, eopp) == TileType.Edge.R) {
-                        long ek = packPos(ex, ey, eopp);
-                        if (!region.contains(ek)) queue.add(new int[]{ex, ey, eopp});
+            boolean terminus = (type == TileType.ROAD_CROSS || type == TileType.ROAD_T);
+
+            // ── Within-tile connections (non-terminus only) ───────────────────────
+            // Terminus tiles are road endpoints: their arms are isolated from each other.
+            if (!terminus) {
+                for (int d = 0; d < 4; d++) {
+                    if (d == slot) continue;
+                    if (PlacedTile.edgeOf(tile, d) == TileType.Edge.ROAD) {
+                        long dk = packPos(lx, ly, d);
+                        if (!region.contains(dk)) queue.add(new int[]{lx, ly, d});
                     }
-                }
-                continue; // не распространяться по другим рёбрам этого тайла
-            } // не дорога — игнорируем
-
-            // остальные рёбра на тайле — продолжение дороги
-            for (int d = 0; d < 4; d++) {
-                if (d == cslot) continue;
-                if (PlacedTile.edgeOf(tile, d) == TileType.Edge.R) {
-                    long nk = packPos(cx, cy, d);
-                    if (!region.contains(nk)) queue.add(new int[]{cx, cy, d});
                 }
             }
 
-            // соседний тайл в направлении cslot
-            int nx = cx + DX[cslot], ny = cy + DY[cslot];
+            // ── Cross-tile connection: follow road across edge 'slot' ─────────────
+            // For terminus tiles this either:
+            //   (a) crosses to the road segment beyond them  – when they are the start tile
+            //   (b) crosses back to the tile we came from   – already in region → no-op
+            int nx = lx + DX[slot], ny = ly + DY[slot];
             short nb = get(nx, ny);
-            int opp = TileType.opposite(cslot);
-
             if (PlacedTile.isEmpty(nb)) {
-                complete = false; // свободный конец
-            } else if (PlacedTile.edgeOf(nb, opp) == TileType.Edge.R) {
-                long nk = packPos(nx, ny, opp);
-                if (!region.contains(nk)) queue.add(new int[]{nx, ny, opp});
+                // No neighbour in this direction → open road end
+                complete = false;
             } else {
-                TileType ntype = PlacedTile.typeOf(nb);
-                // конец дороги — город или монастырь
-                if (ntype != null && (ntype.monastery || hasCityEdge(nb, opp))) {
-                    complete = complete && true;
-                } else {
-                    complete = false;
+                int opp = TileType.opposite(slot);
+                if (PlacedTile.edgeOf(nb, opp) == TileType.Edge.ROAD) {
+                    long nk = packPos(nx, ny, opp);
+                    if (!region.contains(nk)) queue.add(new int[]{nx, ny, opp});
                 }
+                // else: neighbour has city / field / monastery at the facing edge
+                //       → road is naturally capped here, not incomplete
             }
         }
 
         return complete;
     }
 
+
     // helper для проверки, есть ли на тайле город в нужной грани
     private boolean hasCityEdge(short tile, int slot) {
         TileType type = PlacedTile.typeOf(tile);
         if (type == null) return false;
-        return PlacedTile.edgeOf(tile, slot) == TileType.Edge.C;
+        return PlacedTile.edgeOf(tile, slot) == TileType.Edge.CITY;
     }
 
     // ── Monastery scoring ─────────────────────────────────────────────────────
@@ -422,27 +588,101 @@ public class TileKingdomsBoard {
     }
 
     // ── Final scoring ─────────────────────────────────────────────────────────
-    public void scoreFinalAll(Map<Long, Integer> claims, int nPlayers, int[] scores, int[] followersLeft) {
-        Set<String> processed = new HashSet<>();
-        for (int gy = 0; gy < SIZE; gy++)
-            for (int gx = 0; gx < SIZE; gx++) {
-                int lx = gx - HALF, ly = gy - HALF;
-                short tile = get(lx, ly);
-                if (PlacedTile.isEmpty(tile)) continue;
-                TileType type = PlacedTile.typeOf(tile);
-                for (int dir = 0; dir < 4; dir++) {
-                    TileType.Edge e = PlacedTile.edgeOf(tile, dir);
-                    if (e == TileType.Edge.F) continue;
-                    String rid = getRegionId(lx, ly, dir);
-                    if (processed.contains(rid)) continue;
-                    processed.add(rid);
-                    if (e == TileType.Edge.C) scoreCity(lx, ly, dir, claims, nPlayers, scores, followersLeft, false);
-                    else if (e == TileType.Edge.R)
-                        scoreRoad(lx, ly, dir, claims, nPlayers, scores, followersLeft, false);
-                }
-                if (type != null && type.monastery)
-                    scoreMonastery(lx, ly, claims, nPlayers, scores, followersLeft, false);
+//    public void scoreFinalAll(Map<Long, Integer> claims, int nPlayers, int[] scores, int[] followersLeft) {
+//        Set<Long> processed = new HashSet<>();
+//        for (int gy = 0; gy < SIZE; gy++)
+//            for (int gx = 0; gx < SIZE; gx++) {
+//                int lx = gx - HALF, ly = gy - HALF;
+//                short tile = get(lx, ly);
+//                if (PlacedTile.isEmpty(tile)) continue;
+//                TileType type = PlacedTile.typeOf(tile);
+//                for (int dir = 0; dir < 4; dir++) {
+//                    TileType.Edge e = PlacedTile.edgeOf(tile, dir);
+//                    if (e == TileType.Edge.F) continue;
+//                    long rid = getRegionId(lx, ly, dir);
+//                    if (processed.contains(rid)) continue;
+//                    processed.add(rid);
+//                    if (e == TileType.Edge.C) scoreCity(lx, ly, dir, claims, nPlayers, scores, followersLeft, false);
+//                    else if (e == TileType.Edge.R)
+//                        scoreRoad(lx, ly, dir, claims, nPlayers, scores, followersLeft, false);
+//                }
+//                if (type != null && type.monastery)
+//                    scoreMonastery(lx, ly, claims, nPlayers, scores, followersLeft, false);
+//            }
+//    }
+
+    private int countFeatureTiles(Set<Long> region) {
+        Set<Long> tiles = new HashSet<>();
+
+        for (long p : region) {
+            int lx = ((int)((p >> 8) & 0xFF)) - 64;
+            int ly = ((int)((p >> 16) & 0xFF)) - 64;
+
+            long tileKey = (((long) lx) << 32) | (ly & 0xFFFFFFFFL);
+            tiles.add(tileKey);
+        }
+
+        return tiles.size();
+    }
+
+    public void scoreFinalAll(Map<Long,Integer> claims,
+                              int nPlayers,
+                              int[] scores,
+                              int[] followersLeft) {
+
+        Set<Long> processed = new HashSet<>();
+
+        for (Map.Entry<Long,Integer> e : claims.entrySet()) {
+
+            long key = e.getKey();
+            int slot = (int)(key & 0xFF);
+            int lx = ((int)((key >> 8) & 0xFF)) - 64;
+            int ly = ((int)((key >> 16) & 0xFF)) - 64;
+            int player = e.getValue();
+
+            if (slot == SLOT_CENTER) {
+                int pts = countMonasteryTiles(lx, ly);
+                scores[player] += pts;
+                continue;
             }
+
+            Set<Long> region = getRegion(lx, ly, slot);
+            long regionId = getRegionHash(region);
+
+            if (!processed.add(regionId))
+                continue; // регион уже считали
+
+            int tiles = countFeatureTiles(region);
+
+            // majority
+            int[] count = new int[nPlayers];
+            for (long p : region) {
+                Integer owner = claims.get(p);
+                if (owner != null)
+                    count[owner]++;
+            }
+
+            int max = Arrays.stream(count).max().orElse(0);
+
+            for (int p = 0; p < nPlayers; p++) {
+                if (count[p] == max && max > 0)
+                    scores[p] += tiles;
+            }
+        }
+    }
+
+    private int countMonasteryTiles(int lx, int ly) {
+        int count = 0;
+
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                if (get(lx + dx, ly + dy) != 0) {
+                    count++;
+                }
+            }
+        }
+
+        return count;
     }
 
     // ── Ownership helpers ─────────────────────────────────────────────────────
@@ -470,6 +710,55 @@ public class TileKingdomsBoard {
     // ── Serialisation ─────────────────────────────────────────────────────────
     public short[] getGridCopy() {
         return Arrays.copyOf(grid, grid.length);
+    }
+
+    /**
+     * Returns true if the road or city feature starting at (lx, ly, slot) is
+     * already fully closed. Slot must be 0-3 (N/E/S/W).
+     * Returns false for Field (F) edges and for empty tiles.
+     */
+    public boolean isFeatureComplete(int lx, int ly, int slot) {
+        short tile = get(lx, ly);
+        if (PlacedTile.isEmpty(tile)) return false;
+        TileType.Edge edge = PlacedTile.edgeOf(tile, slot);
+        if (edge == TileType.Edge.CITY)
+            return bfsCityComplete(lx, ly, slot, new HashSet<>(), new HashSet<>());
+        if (edge == TileType.Edge.ROAD)
+            return bfsRoadComplete(lx, ly, slot, new HashSet<>(), new HashSet<>());
+        return false; // Field edges are never "complete" in this sense
+    }
+
+    /**
+     * Returns true if the monastery at (lx, ly) is fully surrounded
+     * (the 3×3 area around it is entirely filled — 9 tiles including itself).
+     */
+    public boolean isMonasteryComplete(int lx, int ly) {
+        int count = 0;
+        for (int dy = -1; dy <= 1; dy++)
+            for (int dx = -1; dx <= 1; dx++)
+                if (!isEmpty(lx + dx, ly + dy)) count++;
+        return count == 9;
+    }
+
+    /**
+     * Reconstructs a TileKingdomsBoard from a raw grid snapshot.
+     * Used client-side so the screen can run the same BFS checks.
+     */
+    public static TileKingdomsBoard fromGrid(short[] snapshot) {
+        TileKingdomsBoard b = new TileKingdomsBoard();
+        int len = Math.min(snapshot.length, b.grid.length);
+        System.arraycopy(snapshot, 0, b.grid, 0, len);
+        // Rebuild bounds so BFS iteration is sensible
+        for (int i = 0; i < b.grid.length; i++) {
+            if (!PlacedTile.isEmpty(b.grid[i])) {
+                int gx = i % SIZE, gy = i / SIZE;
+                b.minX = Math.min(b.minX, gx);
+                b.maxX = Math.max(b.maxX, gx);
+                b.minY = Math.min(b.minY, gy);
+                b.maxY = Math.max(b.maxY, gy);
+            }
+        }
+        return b;
     }
 
     public int[] getBounds() {
