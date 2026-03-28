@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.concurrent.Executor;
 
 /**
- * Server→Client: sends the full board grid + claims array.
+ * Server->Client: sends the full board grid + claims array.
  * Sent whenever boardDirty or claimsDirty is set in TileKingdomsGame.
  */
 public record TileKingdomsBoardPayload(
