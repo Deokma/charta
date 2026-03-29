@@ -121,3 +121,4 @@ runs/
 # Data gen cache
 /neoforge/src/main/generated/.cache/
 /fabric/src/main/generated/.cache/
+/.vscode/settings.json

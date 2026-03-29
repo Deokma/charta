@@ -79,7 +79,7 @@ public class CardTableBlock extends BaseEntityBlock {
     private static final VoxelShape SIDE_SOUTH = VoxelShapeUtils.rotate(SIDE_WEST, Direction.WEST);
 
     private static final Map<Combination, VoxelShape> SHAPES = new HashMap<>();
-    private static final List<Vector2i> VALID_DIMENSIONS = List.of(new Vector2i(3, 3), new Vector2i(4, 3), new Vector2i(5, 3));
+    private static final List<Vector2i> VALID_DIMENSIONS = List.of(new Vector2i(2, 3), new Vector2i(3, 3), new Vector2i(4, 3), new Vector2i(5, 3));
     private static final int MAX_SIZE;
 
     public static final BooleanProperty VALID = BooleanProperty.create("valid");
@@ -139,13 +139,13 @@ public class CardTableBlock extends BaseEntityBlock {
     public CardTableBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any()
-            .setValue(VALID, false)
-            .setValue(NORTH, false)
-            .setValue(EAST, false)
-            .setValue(SOUTH, false)
-            .setValue(WEST, false)
-            .setValue(CLOTH, false)
-            .setValue(COLOR, DyeColor.WHITE)
+                .setValue(VALID, false)
+                .setValue(NORTH, false)
+                .setValue(EAST, false)
+                .setValue(SOUTH, false)
+                .setValue(WEST, false)
+                .setValue(CLOTH, false)
+                .setValue(COLOR, DyeColor.WHITE)
         );
     }
 
@@ -365,11 +365,11 @@ public class CardTableBlock extends BaseEntityBlock {
     @Override
     protected @NotNull VoxelShape getShape(BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos, @NotNull CollisionContext context) {
         Combination combination = new Combination(
-            state.getValue(VALID),
-            state.getValue(NORTH),
-            state.getValue(EAST),
-            state.getValue(SOUTH),
-            state.getValue(WEST)
+                state.getValue(VALID),
+                state.getValue(NORTH),
+                state.getValue(EAST),
+                state.getValue(SOUTH),
+                state.getValue(WEST)
         );
         return SHAPES.getOrDefault(combination, Shapes.empty());
     }

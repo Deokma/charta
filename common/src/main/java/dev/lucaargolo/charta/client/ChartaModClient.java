@@ -13,6 +13,7 @@ import dev.lucaargolo.charta.common.entity.ModEntityTypes;
 import dev.lucaargolo.charta.common.game.impl.crazyeights.CrazyEightsScreen;
 import dev.lucaargolo.charta.common.game.impl.blackjack.BlackjackScreen;
 import dev.lucaargolo.charta.common.game.impl.fun.FunScreen;
+import dev.lucaargolo.charta.common.game.impl.roulette.RouletteScreen;
 import dev.lucaargolo.charta.common.game.impl.solitaire.SolitaireScreen;
 import dev.lucaargolo.charta.common.game.impl.texasholdem.TexasHoldemScreen;
 import dev.lucaargolo.charta.common.item.ModItems;
@@ -115,6 +116,7 @@ public abstract class ChartaModClient {
         this.registerMenuScreen(ModMenuTypes.FUN, FunScreen::new);
         this.registerMenuScreen(ModMenuTypes.SOLITAIRE, SolitaireScreen::new);
         this.registerMenuScreen(ModMenuTypes.TEXAS_HOLDEM, TexasHoldemScreen::new);
+        this.registerMenuScreen(ModMenuTypes.ROULETTE, RouletteScreen::new);
 
         this.registerAdditionalModel(ChartaMod.id("deck"));
         this.registerDynamicItemRenderer(ModItems.DECK, DeckItemRenderer::new);

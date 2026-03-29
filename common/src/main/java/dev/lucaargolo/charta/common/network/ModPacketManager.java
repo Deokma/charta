@@ -32,6 +32,7 @@ public abstract class ModPacketManager {
         register(PacketInfo.PLAY_TO_SERVER, BlackjackActionPayload.class);
         register(PacketInfo.PLAY_TO_SERVER, TexasHoldemActionPayload.class);
         register(PacketInfo.PLAY_TO_CLIENT, TexasHoldemChipsPayload.class);
+        register(PacketInfo.PLAY_TO_SERVER, RouletteActionPayload.class);
     }
 
     protected abstract <T extends CustomPacketPayload> void register(PacketInfo info, Class<T> klass);

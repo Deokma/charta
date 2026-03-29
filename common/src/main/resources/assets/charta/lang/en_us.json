@@ -1,23 +1,18 @@
 {
   "itemGroup.charta.items": "Charta Items",
   "itemGroup.charta.decks": "Charta Decks",
-
   "charta.cards": "Cards",
   "charta.card": "Card",
   "charta.suits": "Suits",
   "charta.suit": "Suit",
   "charta.color": "Color",
-
   "charta.game_history": "Game History",
-
   "charta.crazy_eights": "Crazy Eights",
   "charta.fun": "Fun",
   "charta.solitaire": "Solitaire",
   "charta.texas_holdem": "Texas Hold'em",
-
   "entity.minecraft.villager.charta.dealer": "Dealer",
   "entity.minecraft.villager.dealer": "Dealer",
-
   "block.charta.dealer_table": "Dealer Table",
   "block.charta.oak_card_table": "Oak Card Table",
   "block.charta.oak_game_chair": "Oak Game Chair",
@@ -63,14 +58,12 @@
   "block.charta.acacia_game_chair": "Acacia Game Chair",
   "block.charta.acacia_bar_stool": "Acacia Bar Stool",
   "block.charta.acacia_bar_shelf": "Acacia Bar Shelf",
-
   "block.charta.empty_beer_glass": "Empty Beer Glass",
   "block.charta.empty_wine_glass": "Empty Wine Glass",
   "block.charta.wheat_beer_glass": "Wheat Beer Glass",
   "block.charta.sorghum_beer_glass": "Sorghum Beer Glass",
   "block.charta.berry_wine_glass": "Berry Wine Glass",
   "block.charta.cactus_wine_glass": "Cactus Wine Glass",
-
   "block.minecraft.banner.charta.spades": "Spades",
   "block.minecraft.banner.charta.spades.black": "Black Spades",
   "block.minecraft.banner.charta.spades.blue": "Blue Spades",
@@ -88,7 +81,6 @@
   "block.minecraft.banner.charta.spades.red": "Red Spades",
   "block.minecraft.banner.charta.spades.white": "White Spades",
   "block.minecraft.banner.charta.spades.yellow": "Yellow Spades",
-
   "block.minecraft.banner.charta.hearts": "Hearts",
   "block.minecraft.banner.charta.hearts.black": "Black Hearts",
   "block.minecraft.banner.charta.hearts.blue": "Blue Hearts",
@@ -106,7 +98,6 @@
   "block.minecraft.banner.charta.hearts.red": "Red Hearts",
   "block.minecraft.banner.charta.hearts.white": "White Hearts",
   "block.minecraft.banner.charta.hearts.yellow": "Yellow Hearts",
-
   "block.minecraft.banner.charta.clubs": "Clubs",
   "block.minecraft.banner.charta.clubs.black": "Black Clubs",
   "block.minecraft.banner.charta.clubs.blue": "Blue Clubs",
@@ -124,7 +115,6 @@
   "block.minecraft.banner.charta.clubs.red": "Red Clubs",
   "block.minecraft.banner.charta.clubs.white": "White Clubs",
   "block.minecraft.banner.charta.clubs.yellow": "Yellow Clubs",
-
   "block.minecraft.banner.charta.diamonds": "Diamonds",
   "block.minecraft.banner.charta.diamonds.black": "Black Diamonds",
   "block.minecraft.banner.charta.diamonds.blue": "Blue Diamonds",
@@ -142,18 +132,14 @@
   "block.minecraft.banner.charta.diamonds.red": "Red Diamonds",
   "block.minecraft.banner.charta.diamonds.white": "White Diamonds",
   "block.minecraft.banner.charta.diamonds.yellow": "Yellow Diamonds",
-
   "item.charta.deck": "Deck",
   "item.charta.iron_lead": "Iron Lead",
-
   "deck.charta.unknown": "§f????",
-
   "deck.charta.standard.black": "Standard Black Deck",
   "deck.charta.standard.red": "Standard Red Deck",
   "deck.charta.standard.blue": "Standard Blue Deck",
   "deck.charta.standard.green": "Standard Green Deck",
   "deck.charta.standard.yellow": "Standard Yellow Deck",
-
   "deck.charta.light.aqua": "Light Aqua Deck",
   "deck.charta.light.blue": "Light Blue Deck",
   "deck.charta.light.green": "Light Green Deck",
@@ -161,7 +147,6 @@
   "deck.charta.light.pink": "Light Ping Deck",
   "deck.charta.light.red": "Light Red Deck",
   "deck.charta.light.yellow": "Light Yellow Deck",
-
   "deck.charta.dark.aqua": "Dark Aqua Deck",
   "deck.charta.dark.blue": "Dark Blue Deck",
   "deck.charta.dark.green": "Dark Green Deck",
@@ -169,7 +154,6 @@
   "deck.charta.dark.pink": "Dark Pink Deck",
   "deck.charta.dark.red": "Dark Red Deck",
   "deck.charta.dark.yellow": "Dark Yellow Deck",
-
   "deck.charta.neon.aqua": "Neon Aqua Deck",
   "deck.charta.neon.blue": "Neon Blue Deck",
   "deck.charta.neon.green": "Neon Green Deck",
@@ -177,7 +161,6 @@
   "deck.charta.neon.pink": "Neon Pink Deck",
   "deck.charta.neon.red": "Neon Red Deck",
   "deck.charta.neon.yellow": "Neon Yellow Deck",
-
   "deck.charta.fun": "Fun Deck",
   "deck.charta.fun_light": "Fun Light Deck",
   "deck.charta.fun_minimal": "Fun Minimal Deck",
@@ -185,7 +168,6 @@
   "deck.charta.fun_inverted": "Fun Inverted Deck",
   "deck.charta.fun_neon": "Neon Fun Deck",
   "deck.charta.fun_minimal_neon": "Neon Fun Minimal Deck",
-
   "deck.charta.flags.argentina": "Argentina Deck",
   "deck.charta.flags.australia": "Australia Deck",
   "deck.charta.flags.belgium": "Belgium Deck",
@@ -211,33 +193,25 @@
   "deck.charta.flags.ukraine": "Ukraine Deck",
   "deck.charta.flags.united_kingdom": "United Kingdom Deck",
   "deck.charta.flags.usa": "United States Deck",
-
   "deck.charta.inverted": "Inverted Deck",
-
   "deck.charta.metals.copper": "Copper Deck",
   "deck.charta.metals.gold": "Gold Deck",
   "deck.charta.metals.iron": "Iron Deck",
-
   "deck.charta.gems.diamond": "Diamond Deck",
   "deck.charta.gems.emerald": "Emerald Deck",
   "deck.charta.gems.ruby": "Ruby Deck",
   "deck.charta.gems.amethyst": "Amethyst Deck",
   "deck.charta.gems.sapphire": "Sapphire Deck",
-
   "suit.charta.unknown": "§f????",
-
   "suit.charta.spades": "Spades",
   "suit.charta.hearts": "Hearts",
   "suit.charta.clubs": "Clubs",
   "suit.charta.diamonds": "Diamonds",
-
   "suit.charta.red": "Red",
   "suit.charta.yellow": "Yellow",
   "suit.charta.green": "Green",
   "suit.charta.blue": "Blue",
-
   "card.charta.unknown": "§f????",
-
   "card.charta.spades.ace": "Ace of Spades",
   "card.charta.spades.two": "Two of Spades",
   "card.charta.spades.three": "Three of Spades",
@@ -252,7 +226,6 @@
   "card.charta.spades.queen": "Queen of Spades",
   "card.charta.spades.king": "King of Spades",
   "card.charta.spades.joker": "Joker of Spades",
-
   "card.charta.hearts.ace": "Ace of Hearts",
   "card.charta.hearts.two": "Two of Hearts",
   "card.charta.hearts.three": "Three of Hearts",
@@ -267,7 +240,6 @@
   "card.charta.hearts.queen": "Queen of Hearts",
   "card.charta.hearts.king": "King of Hearts",
   "card.charta.hearts.joker": "Joker of Hearts",
-
   "card.charta.clubs.ace": "Ace of Clubs",
   "card.charta.clubs.two": "Two of Clubs",
   "card.charta.clubs.three": "Three of Clubs",
@@ -282,7 +254,6 @@
   "card.charta.clubs.queen": "Queen of Clubs",
   "card.charta.clubs.king": "King of Clubs",
   "card.charta.clubs.joker": "Joker of Clubs",
-
   "card.charta.diamonds.ace": "Ace of Diamonds",
   "card.charta.diamonds.two": "Two of Diamonds",
   "card.charta.diamonds.three": "Three of Diamonds",
@@ -297,10 +268,8 @@
   "card.charta.diamonds.queen": "Queen of Diamonds",
   "card.charta.diamonds.king": "King of Diamonds",
   "card.charta.diamonds.joker": "Joker of Diamonds",
-
   "card.charta.wild": "§fWild Card",
   "card.charta.wildplusfour": "§fWild +4",
-
   "card.charta.red.zero": "Red Zero",
   "card.charta.red.one": "Red One",
   "card.charta.red.two": "Red Two",
@@ -314,7 +283,6 @@
   "card.charta.red.block": "Red Block",
   "card.charta.red.reverse": "Red Reverse",
   "card.charta.red.plustwo": "Red +2",
-
   "card.charta.yellow.zero": "Yellow Zero",
   "card.charta.yellow.one": "Yellow One",
   "card.charta.yellow.two": "Yellow Two",
@@ -328,7 +296,6 @@
   "card.charta.yellow.block": "Yellow Block",
   "card.charta.yellow.reverse": "Yellow Reverse",
   "card.charta.yellow.plustwo": "Yellow +2",
-
   "card.charta.green.zero": "Green Zero",
   "card.charta.green.one": "Green One",
   "card.charta.green.two": "Green Two",
@@ -342,7 +309,6 @@
   "card.charta.green.block": "Green Block",
   "card.charta.green.reverse": "Green Reverse",
   "card.charta.green.plustwo": "Green +2",
-
   "card.charta.blue.zero": "Blue Zero",
   "card.charta.blue.one": "Blue One",
   "card.charta.blue.two": "Blue Two",
@@ -356,13 +322,11 @@
   "card.charta.blue.block": "Blue Block",
   "card.charta.blue.reverse": "Blue Reverse",
   "card.charta.blue.plustwo": "Blue +2",
-
   "button.charta.reset": "Reset",
   "button.charta.save": "Save",
   "button.charta.start": "Start",
   "button.charta.confirm": "Confirm",
   "button.charta.cancel": "Cancel",
-
   "rule.charta.available_draws": "Last draw amount",
   "rule.charta.available_draws.description": "The amount of cards you are able to draw during your round.",
   "rule.charta.last_draw_amount": "Last draw amount",
@@ -379,7 +343,6 @@
   "rule.charta.stack_same_plus2_on_plus4.description": "Controls if players are allowed to stack +2 cards on top of +4 cards, if they're the same color as the one chose by the +4 player.",
   "rule.charta.stack_any_plus2_on_plus4": "Stack Any +2 on +4",
   "rule.charta.stack_any_plus2_on_plus4.description": "Controls if players are allowed to stack +2 cards on top of +4 cards, independent of its color.",
-
   "message.charta.put_table_cloth": "You need to put a carpet on this table.",
   "message.charta.not_playing_current": "You're not playing the current game.",
   "message.charta.need_to_be_sat": "You need to be sat in the table to start a game.",
@@ -448,26 +411,22 @@
   "message.charta.move_card_from_tableau_to_tableau": "Move %s from one Tableau to another.",
   "message.charta.move_card_from_waste_to_tableau": "Move %s from Waste to Tableau.",
   "message.charta.no_moves_available": "No moves available. Try drawing a new card.",
-
   "charta_md:charta.how_to_play_fun": "charta:en_us/how_to_play_fun",
   "charta_md:charta.how_to_play_crazy_eights": "charta:en_us/how_to_play_crazy_eights",
   "charta_md:charta.how_to_play_solitaire": "charta:en_us/how_to_play_solitaire",
   "charta_md:charta.how_to_play_texas_holdem": "charta:en_us/how_to_play_texas_holdem",
   "charta_md:charta.how_to_play_blackjack": "charta:en_us/how_to_play_blackjack",
-
   "button.charta.texas_holdem.fold": "Fold",
   "button.charta.texas_holdem.call": "Call",
   "button.charta.texas_holdem.check": "Check",
   "button.charta.texas_holdem.raise": "Raise",
   "button.charta.texas_holdem.allin": "All-In",
-
   "rule.charta.texas_holdem.starting_chips": "Starting Chips (×100)",
   "rule.charta.texas_holdem.starting_chips.description": "Starting chips per player. Value × 100 (e.g. 10 = 1000 chips).",
   "rule.charta.texas_holdem.big_blind": "Big Blind",
   "rule.charta.texas_holdem.big_blind.description": "The big blind bet amount (chips).",
   "rule.charta.texas_holdem.raise_multiplier": "Raise Size (×BB)",
   "rule.charta.texas_holdem.raise_multiplier.description": "How many big blinds each Raise adds. E.g. 2 = raise by 2×BB.",
-
   "message.charta.texas_holdem.pot": "Pot: %s",
   "message.charta.texas_holdem.preflop": "Pre-Flop",
   "message.charta.texas_holdem.flop": "Flop",
@@ -506,6 +465,18 @@
   "message.charta.texas_holdem.showdown_result": "%s won %s♦ with %s",
   "message.charta.texas_holdem.showdown_result_short": "%s (%s)",
   "message.charta.texas_holdem.chips_remaining": "Chips: %s",
-  "message.charta.texas_holdem.posted_blind": "Posted blind: %s"
-
+  "message.charta.texas_holdem.posted_blind": "Posted blind: %s",
+  "rule.charta.roulette.starting_chips": "Starting Chips",
+  "rule.charta.roulette.starting_chips.description": "How many chips each player starts with (×100).",
+  "rule.charta.roulette.bet_amount": "Bet Amount",
+  "rule.charta.roulette.bet_amount.description": "How many chips to bet each round (×100).",
+  "message.charta.roulette.place_bets": "Place your bets! (Red / Black / Rank)",
+  "message.charta.roulette.drawn_label": "Last Card:",
+  "message.charta.roulette.spinning": "Spinning…",
+  "message.charta.roulette.result": "Results!",
+  "message.charta.roulette.drawn_card": "Drew: %s of %s",
+  "message.charta.roulette.bet_placed": "Bet %s chips on %s",
+  "message.charta.roulette.won": "You won %s chips!",
+  "message.charta.roulette.lost": "You lost %s chips.",
+  "message.charta.roulette.reshuffled": "Deck reshuffled."
 }
