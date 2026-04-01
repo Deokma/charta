@@ -27,26 +27,22 @@ public record RouletteActionPayload(int action) implements CustomPacketPayload {
     public static void handleServer(RouletteActionPayload payload, ServerPlayer player, Executor executor) {
         executor.execute(() -> {
             if (!(player.containerMenu instanceof RouletteMenu menu)) return;
-
             CardPlayer cardPlayer = ((LivingEntityMixed) player).charta_getCardPlayer();
             RouletteGame game = menu.getGame();
             int idx = game.getPlayers().indexOf(cardPlayer);
             if (idx < 0) return;
 
             int action = payload.action();
-
-            // Determine bet type from action code
             int betType;
-            if (action == RouletteGame.BET_RED) {
-                betType = RouletteGame.BET_RED_T;
-            } else if (action == RouletteGame.BET_BLACK) {
-                betType = RouletteGame.BET_BLACK_T;
-            } else if (action >= RouletteGame.BET_RANK && action <= RouletteGame.BET_RANK + 12) {
-                betType = 3 + (action - RouletteGame.BET_RANK);  // 3..15
+            if (action == RouletteGame.ACTION_RED) {
+                betType = RouletteGame.BET_RED;
+            } else if (action == RouletteGame.ACTION_BLACK) {
+                betType = RouletteGame.BET_BLACK;
+            } else if (action >= RouletteGame.ACTION_NUMBER && action <= RouletteGame.ACTION_NUMBER + 36) {
+                betType = 10 + (action - RouletteGame.ACTION_NUMBER); // 10..46
             } else {
-                return; // unknown action
+                return;
             }
-
             game.handleBet(idx, betType);
         });
     }
